@@ -9,9 +9,9 @@ Machine-first F/N coordination protocol. **Authoritative log:** `AGENT_BOARD.jso
 - `AGENT_BOARD.jsonl` is append-only. Never edit, delete, reorder, pretty-print, or rewrite old records.
 - One compact JSON object per line; UTF-8; no comments; schema version `v=1`.
 - File order is authoritative causal order. `ts` is UTC creation metadata only; never sort/reorder by timestamp.
-- Before reading/acting: `git fetch classproject main`; inspect `git show classproject/main:AGENT_BOARD.jsonl` and this spec when needed. This does not touch a dirty worktree.
+- Before reading/acting: `git fetch origin main`; inspect `git show origin/main:AGENT_BOARD.jsonl` and this spec when needed. This does not touch a dirty worktree. If the repository remote is not named `origin`, substitute that remote name.
 - Before append, refresh remote state. Push board-only commits to `main` promptly and independently from unfinished code.
-- If local history has unpushed non-board commits, use a clean worktree based on `classproject/main` for the board-only commit.
+- If local history has unpushed non-board commits, use a clean worktree based on `origin/main` for the board-only commit.
 - On conflict, preserve the remote log byte-for-byte and append the unsent local record after its tail. Never force-push.
 - Board commits are coordination, not approval of code/experiments. Evidence/configs/metrics belong under `experiments/`.
 - Prefer `python scripts/agent_board.py` for validation, querying, and appends.
