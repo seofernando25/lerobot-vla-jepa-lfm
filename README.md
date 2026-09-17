@@ -1,57 +1,61 @@
-# VLA-JEPA: Qwen3 vs LFM2.5-VL
+# LeRobot VLA-JEPA: Qwen3 vs LFM2.5-VL
 
-Computer vision class project comparing the **original Qwen3-VL-2B backbone** in VLA-JEPA with **LFM2.5-VL-450M** on LIBERO.
+Computer vision class project testing whether **LFM2.5-VL-450M** can replace the original **Qwen3-VL-2B** backbone in VLA-JEPA.
 
-This repository is derived from [ginwind/VLA-JEPA](https://github.com/ginwind/VLA-JEPA). The original upstream README is preserved as [`ORIGINAL_README.md`](ORIGINAL_README.md).
+The reference implementation and checkpoints now come directly from [Hugging Face LeRobot](https://github.com/huggingface/lerobot). This repo contains only our out-of-tree LeRobot policy plugin, experiment records, and coordination tooling.
 
-## Question
+## Design
 
-Can a much smaller pretrained VLM replace Qwen3-VL-2B in VLA-JEPA while preserving useful action conditioning and reducing compute/memory cost?
+- **Reference:** upstream LeRobot `vla_jepa` + `lerobot/VLA-JEPA-*` checkpoints.
+- **Variant:** `vla_jepa_lfm`, using pretrained LFM2.5-VL-450M.
+- **Control:** reuse LeRobot's VLA-JEPA action head, V-JEPA2 world model, preprocessing, training, and evaluation pipeline.
+- **Bridge:** project LFM's 1024-D decoder state into VLA-JEPA's 2048-D conditioning interface.
 
-We compare:
-
-- **Qwen3-VL-2B** — original VLA-JEPA reference.
-- **LFM2.5-VL-450M, frozen** — 1024→2048 bridge into the pretrained VLA-JEPA action/world-model stack.
-- **LFM2.5-VL-450M, adapted** — residual RMSNorm/MLP bridge plus the final four LFM decoder blocks and multimodal projector trainable.
-
-## Preliminary results
-
-Matched 1,000-step LIBERO runs, seed 42, batch size 2, same VLA-JEPA action/world-model initialization:
-
-| Endpoint metric | Qwen3-VL-2B | LFM frozen | LFM adapted |
-|---|---:|---:|---:|
-| Action MAE ↓ | 0.2070 | 0.2231 | **0.1870** |
-| Normalized distance ↓ | 0.03261 | 0.03336 | **0.03103** |
-| JEPA loss ↓ | **0.13178** | 0.13192 | 0.13230 |
-| Mean model step | 0.469 s | **0.431 s** | 0.469 s |
-| Total parameters | 2.77B | 1.09B | 1.10B |
-| LIBERO-spatial pilot | 0/10 | 0/10 | 0/10 |
-
-These are **preliminary diagnostics**, not an official LIBERO benchmark. Periodic action metrics are computed on training batches, and the simulator pilot used only one rollout per task.
-
-Full protocol and experiment records live in [`experiments/`](experiments/).
-
-## Reproduce
+## Setup
 
 ```bash
-bash scripts/setup_uv_lfm.sh
-
-bash scripts/run_class_project.sh   scripts/configs/class_project/qwen3_2b_baseline.yaml
-
-bash scripts/run_class_project.sh   scripts/configs/class_project/lfm25_450m_frozen.yaml
-
-bash scripts/run_class_project.sh   scripts/configs/class_project/lfm25_450m_rmsmlp_last4.yaml
+uv sync --extra dev
+uv run python scripts/smoke_plugin.py
+uv run pytest
 ```
 
-Pretrained models, LIBERO data, and VLA-JEPA checkpoints are intentionally not committed. See [`ORIGINAL_README.md`](ORIGINAL_README.md) for upstream asset/setup details.
+Python 3.12+ is required by the pinned LeRobot version.
 
-## Project layout
+## Official Qwen baseline
 
-- `starVLA/model/modules/vlm/LFM2_5.py` — LFM2.5-VL integration and adapters.
-- `scripts/configs/class_project/` — controlled experiment configs.
-- `experiments/` — hypotheses, frozen settings, metrics, and conclusions for each experiment.
-- `AGENTS.md` — rules for running and recording future experiments.
+Install simulator dependencies on Linux:
+
+```bash
+CMAKE_POLICY_VERSION_MINIMUM=3.5 uv sync --extra dev --extra eval
+```
+
+Then evaluate:
+
+```bash
+uv run lerobot-eval   --policy.path=lerobot/VLA-JEPA-LIBERO   --env.type=libero   --env.task=libero_spatial   --eval.n_episodes=10   --eval.batch_size=5
+```
+
+This evaluates the untouched upstream Qwen3 checkpoint. Larger, matched evaluations are recorded under `experiments/`.
+
+## LFM training
+
+```bash
+uv run lerobot-train   --policy.type=vla_jepa_lfm   --policy.init_from_vla_jepa=lerobot/VLA-JEPA-Pretrain   --policy.adapter_type=linear   --dataset.repo_id=HuggingFaceVLA/libero   --steps=1000
+```
+
+`init_from_vla_jepa` transfers only architecture-compatible action/world-model tensors; Qwen weights are never loaded into LFM.
+
+## Experiments
+
+- `EXP-001` — legacy ginwind/starVLA pilot; preserved for history.
+- `EXP-002` — LeRobot official baseline reproduction (planned/current).
+
+See [`experiments/`](experiments/) for hypotheses, immutable settings, run records, metrics, and limitations.
+
+## Legacy
+
+The pre-pivot ginwind-derived tree is preserved at Git tag **`legacy-ginwind-exp001`**. It is intentionally not carried on `main`.
 
 ## Attribution
 
-Built on [ginwind/VLA-JEPA](https://github.com/ginwind/VLA-JEPA). Please preserve upstream attribution and cite the original projects in class reports or derivative work.
+VLA-JEPA: Sun et al. (2026). LeRobot is maintained by Hugging Face. LFM2.5-VL is by Liquid AI. This project does not redistribute model weights or datasets.

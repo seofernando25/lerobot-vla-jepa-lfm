@@ -1,86 +1,36 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-name = "starVLA"
-authors = [
-    {name = "Jinhui Ye", email="jinhuiyes@gmail.com"},
-    {name = "Fangjing Wang", email="fangjing_wang@outlook.com"},
-    {name = "Junqiu Yu", email="michaelyu1101@163.com"},
-
-]
-description = "StarVLA: A Lego-like Codebase for Vision-Language-Action Model Developing ."
-version = "1.0.1"
+name = "lerobot_policy_vla_jepa_lfm"
+version = "0.1.0"
+description = "LeRobot VLA-JEPA experiments with LFM2.5-VL"
 readme = "README.md"
-requires-python = ">=3.10"
-keywords = ["vision-language-actions models", " robotic manipulation", "multimodal pretraining", "robot learning", "generative models"]
-license = {file = "LICENSE"}
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Education",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-"Programming Language :: Python :: 3 :: Only",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
+requires-python = ">=3.12,<3.13"
+license = {text = "Apache-2.0"}
 dependencies = [
+  "lerobot[vla_jepa,training] @ git+https://github.com/huggingface/lerobot.git@30074f7f1358b3c015ae1750017200e86e9c4eb6",
+  "huggingface-hub>=0.34",
+  "safetensors>=0.5",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "black>=24.2.0",
-    "gpustat",
-    "ipython",
-    "pre-commit",
-    "ruff>=0.2.2",
-]
-sagemaker = [
-    "boto3",
-    "sagemaker"
+dev = ["pytest>=8", "ruff>=0.14"]
+eval = [
+  "hf-libero>=0.1.4,<0.2.0; sys_platform == 'linux'",
+  "scipy>=1.14,<2.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/lerobot_policy_vla_jepa_lfm"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = [
-    "tests",         # test directory
-    "cache",         # cache directory
-    "playground",
-    "results",       # result directory
-    "checkpoints",   # model checkpoint
-    "scripts",       # script directory
-    "eval",          # evaluation related directory
-    ".vscode",       # VS Code configuration directory
-    "*.egg-info",    # egg-info metadata directory
-    "**.log",         # log file
-    "*.tmp",         # temporary file
-    "*.bak",         # backup file
-    "**__pycache__**",   # Python cache directory
-    "*.pyc",         # compiled Python file
-    "*.pyo",          # optimized Python file
-    "**bar**",
-    "starVLA/config",
-
-]
-
-[tool.setuptools.package-data]
-"cogact" = ["py.typed"]
-
-[tool.black]
-line-length = 121
-target-version = ["py310"]
-preview = true
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 121
-target-version = "py310"
+line-length = 100
+target-version = "py312"
 
-[tool.ruff.lint]
-select = ["A", "B", "E", "F", "I", "RUF", "W"]
-ignore = ["F722"]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["E402", "F401"]
+[tool.hatch.metadata]
+allow-direct-references = true

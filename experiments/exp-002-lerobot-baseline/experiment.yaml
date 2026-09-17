@@ -1,0 +1,21 @@
+id: EXP-002
+status: planned
+title: LeRobot official VLA-JEPA LIBERO baseline reproduction
+hypothesis: The untouched LeRobot VLA-JEPA-LIBERO checkpoint produces nonzero, high LIBERO success on our evaluation stack.
+independent_variable: none; baseline verification
+framework:
+  repo: https://github.com/huggingface/lerobot
+  commit: 30074f7f1358b3c015ae1750017200e86e9c4eb6
+policy:
+  type: vla_jepa
+  checkpoint: lerobot/VLA-JEPA-LIBERO
+dataset: HuggingFaceVLA/libero
+primary_suite: libero_spatial
+controls:
+  seed: 42
+  policy_code: untouched upstream
+  checkpoint: published upstream
+protocol:
+  first_gate_episodes: 10
+  target_episodes_per_suite: 100
+  metric: simulator success rate

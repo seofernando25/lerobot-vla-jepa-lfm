@@ -1,31 +1,30 @@
-# Local environments / tools
 .venv/
 .venv-*/
 .tools/
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.ruff_cache/
 
-# Downloaded models, datasets, checkpoints, and experiment outputs
+# Models, data, runs, simulator outputs
 models/
 data/
 runs/
-checkpoints/
 outputs/
+checkpoints/
+*.pt
+*.pth
+*.safetensors
+*.mp4
+wandb/
 
 # Experiment-local heavy artifacts
 experiments/**/artifacts/
 experiments/**/checkpoints/
 experiments/**/videos/
 
-# Logs / caches
-*.log
-.cache/
-wandb/
-tensorboard/
-.DS_Store
-
-# Local secrets / environment overrides
 .env
 .env.*
 !.env.example
+.DS_Store

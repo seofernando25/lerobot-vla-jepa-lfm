@@ -1,4 +1,6 @@
-# EXP-001 — Qwen3 vs LFM2.5-VL
+# EXP-001 — Qwen3 vs LFM2.5-VL (legacy)
+
+> Historical pilot on the pre-LeRobot ginwind/starVLA-derived stack. The complete old tree is preserved at tag `legacy-ginwind-exp001`.
 
 ## Hypothesis
 
@@ -48,6 +50,6 @@ The adapted LFM endpoint produced lower diagnostic action MAE and normalized dis
 
 This does **not** establish better generalization or LIBERO task success: all three closed-loop smoke tests were 0/10, and the action metrics were not measured on a held-out validation set.
 
-## Next experiment
+## Superseded by
 
-Run an adapter-only LFM ablation: keep all LFM weights frozen and use the residual RMSNorm/MLP bridge. This isolates the effect of the bridge from partial LFM unfreezing.
+`EXP-002` verifies the untouched official LeRobot VLA-JEPA checkpoint before any new LFM comparison.

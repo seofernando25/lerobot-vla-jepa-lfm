@@ -1,42 +1,20 @@
 # Experiments
 
-Start new records from [`TEMPLATE.md`](TEMPLATE.md). Every experiment gets its own immutable directory:
+Experiments are immutable research records, not scratch folders.
 
 ```text
-experiments/
-  exp-XXX-short-name/
-    README.md
-    configs/
-      arm-a.yaml
-      arm-b.yaml
-    metrics.json        # optional, small scalar/structured results only
+experiments/exp-XXX-name/
+  experiment.yaml
+  README.md
+  configs/
+  runs/
+    <run-id>/
+      run.json
+      metrics.json
 ```
 
-Do **not** commit checkpoints, datasets, videos, TensorBoard logs, or full run directories.
+`experiment.yaml` defines the question and controls. A run is one execution. Multiple agents never edit the same run directory; each creates a new run ID. Heavy artifacts live outside Git and are referenced by URI/path only when portable.
 
-## Required experiment record
+Required run lifecycle: `planned -> running -> completed`, or terminal `failed` / `aborted`.
 
-Each experiment `README.md` must contain:
-
-1. **Hypothesis** — one testable question.
-2. **Change** — the independent variable.
-3. **Controls** — what is held fixed.
-4. **Protocol** — dataset, seed, steps, batch size, scheduler, hardware, and pretrained initialization.
-5. **Metrics** — exact definitions and where they are computed.
-6. **Results** — compact table with raw values.
-7. **Conclusion** — what the result supports and what it does not support.
-8. **Next experiment** — the smallest follow-up that reduces uncertainty.
-
-Before reporting results, copy the exact config for every experimental arm into `configs/`. Record the git commit SHA used for the run. If a run predates a clean commit, say so explicitly rather than inventing a SHA.
-
-## Naming
-
-Use sequential IDs:
-
-```text
-exp-001-qwen3-vs-lfm25
-exp-002-lfm-adapter-ablation
-exp-003-lfm-unfreeze-depth
-```
-
-Do not overwrite old experiments. A changed hypothesis or protocol gets a new experiment ID.
+`EXP-001` predates this schema and is explicitly marked legacy.

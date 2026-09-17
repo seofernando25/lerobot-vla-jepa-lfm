@@ -1,46 +1,29 @@
-# EXP-XXX — Short name
+# EXP-XXX — title
 
 ## Hypothesis
 
-One testable question.
+One falsifiable sentence.
 
-## Change
+## Independent variable
 
-Primary independent variable.
+One primary change.
 
 ## Controls
 
-What remains fixed relative to the reference arm.
+Dataset, seed policy, steps, batch size, scheduler, preprocessing, initialization, evaluation protocol, hardware class.
 
 ## Protocol
 
-- Code commit:
-- Dataset / mixture:
-- Seed:
-- Optimizer steps:
-- Batch size:
-- Scheduler / warmup:
-- Precision:
-- Pretrained initialization:
-- Hardware:
-- Evaluation protocol:
-
-Exact configs: `configs/`.
-
-## Metrics
-
-Define every metric and state whether it is training-batch, held-out, or simulator based.
+Reference `experiment.yaml` and immutable configs.
 
 ## Results
 
-| Metric | Reference | Variant |
-|---|---:|---:|
-| ... | ... | ... |
+Raw values first; interpretation second.
 
-## Conclusion
+## Limitations
 
-State only what the measurements support. Include limitations.
+State what this experiment does not establish.
 
-## Next experiment
+## Next
 
-Smallest follow-up that reduces the main uncertainty.
+Smallest experiment that resolves the main remaining uncertainty.
