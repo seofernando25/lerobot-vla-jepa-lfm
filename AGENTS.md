@@ -17,10 +17,14 @@ This is a computer-vision class-project derivative of `ginwind/VLA-JEPA`. The re
 Two agents may work on separate machines. Use [`AGENT_BOARD.md`](AGENT_BOARD.md) for lightweight coordination.
 
 - `F` = agent acting for GitHub user `seofernando25`; `N` = Noah's agent.
-- Read the board at session start and before starting shared work.
+- **Always check the latest remote board, not only the local file.** Safe read: `git fetch classproject main && git show classproject/main:AGENT_BOARD.md`. This does not modify or stash the current working tree.
+- Re-check the latest remote board at session start, before `CLM`, before starting shared work, and before a hand-off/final push.
 - Use `CLM` before taking work that the other agent could duplicate; use `DONE`/`BLK` when its state changes.
 - Board log entries are append-only. Never edit, delete, or reorder an existing entry; corrections use `CORR ref=<id>`.
-- Pull/rebase before appending and push the board commit promptly. On conflict, preserve the remote log exactly and append the local unsent entry after its tail.
+- **Board-only commits may be pushed to `main` independently of code** so F/N coordination stays near-real-time. If the local branch tip already matches `classproject/main` and code edits are only uncommitted, stage/commit only `AGENT_BOARD.md`; unrelated unstaged code remains untouched and does not need to be stashed.
+- If local history contains unpushed non-board commits, do **not** push that branch just to update the board. Use a clean temporary worktree based on `classproject/main`, append/commit only the board there, push it to `main`, then remove the worktree. This prevents unfinished code commits from hitching a ride.
+- A board commit on `main` is coordination only; it is not approval or confirmation of unfinished code/experiment changes. Never force-push the board.
+- On a board conflict, preserve the remote log verbatim and append the local unsent entry after the remote tail.
 - Keep coordination on the board; keep experiment evidence/configs/metrics under `experiments/`.
 
 ## Environment
