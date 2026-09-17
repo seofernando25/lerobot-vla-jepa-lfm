@@ -12,7 +12,11 @@ data/
 runs/
 checkpoints/
 outputs/
-experiments/
+
+# Experiment-local heavy artifacts
+experiments/**/artifacts/
+experiments/**/checkpoints/
+experiments/**/videos/
 
 # Logs / caches
 *.log
