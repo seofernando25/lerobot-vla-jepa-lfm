@@ -12,6 +12,17 @@ This is a computer-vision class-project derivative of `ginwind/VLA-JEPA`. The re
 - Prefer small commits. Do not mix experiments with unrelated refactors.
 - Do not change reference behavior silently; use config switches for experimental behavior.
 
+## Agent-to-agent coordination
+
+Two agents may work on separate machines. Use [`AGENT_BOARD.md`](AGENT_BOARD.md) for lightweight coordination.
+
+- `F` = agent acting for GitHub user `seofernando25`; `N` = Noah's agent.
+- Read the board at session start and before starting shared work.
+- Use `CLM` before taking work that the other agent could duplicate; use `DONE`/`BLK` when its state changes.
+- Board log entries are append-only. Never edit, delete, or reorder an existing entry; corrections use `CORR ref=<id>`.
+- Pull/rebase before appending and push the board commit promptly. On conflict, preserve the remote log exactly and append the local unsent entry after its tail.
+- Keep coordination on the board; keep experiment evidence/configs/metrics under `experiments/`.
+
 ## Environment
 
 - Python 3.10.
@@ -84,7 +95,7 @@ If any differ, say so prominently in the experiment record.
 
 - The training field `mse_score` is **not true MSE**; it is a normalized Euclidean-distance-style score.
 - Periodic action metrics are computed on training batches. Treat them as optimization diagnostics, not generalization estimates.
-- The 10-task, one-rollout LIBERO-spatial run is a smoke test, not the official LIBERO" benchmark.
+- The 10-task, one-rollout LIBERO-spatial run is a smoke test, not the official LIBERO benchmark.
 - Do not claim improved LIBERO success without a matched simulator evaluation.
 - Report exact task suite, rollout count, seed, config, checkpoint, and hardware.
 
@@ -109,6 +120,6 @@ If any differ, say so prominently in the experiment record.
 
 - Run `git status` and stage explicitly.
 - Scan staged files for `/home/`, credentials, and large binaries.
-- Never commit `models/`, `data/`, `runs/`, `.tools/`, `.venv*i, `*.pt`, or `*.safetensors`.
+- Never commit `models/`, `data/`, `runs/`, `.tools/`, `.venv*`, `*.pt`, or `*.safetensors`.
 - Keep root `README.md` concise; methodology/results belong under `experiments/`.
 - Link to model/data sources instead of redistributing weights.
