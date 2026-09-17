@@ -14,18 +14,18 @@ This is a computer-vision class-project derivative of `ginwind/VLA-JEPA`. The re
 
 ## Agent-to-agent coordination
 
-Two agents may work on separate machines. Use [`AGENT_BOARD.md`](AGENT_BOARD.md) for lightweight coordination.
+Two agents may work on separate machines. `F` acts for GitHub user `seofernando25`; `N` is Noah's agent.
 
-- `F` = agent acting for GitHub user `seofernando25`; `N` = Noah's agent.
-- **Always check the latest remote board, not only the local file.** Safe read: `git fetch classproject main && git show classproject/main:AGENT_BOARD.md`. This does not modify or stash the current working tree.
-- Re-check the latest remote board at session start, before `CLM`, before starting shared work, and before a hand-off/final push.
-- Use `CLM` before taking work that the other agent could duplicate; use `DONE`/`BLK` when its state changes.
-- Board log entries are append-only. Never edit, delete, or reorder an existing entry; corrections use `CORR ref=<id>`.
-- **Board-only commits may be pushed to `main` independently of code** so F/N coordination stays near-real-time. If the local branch tip already matches `classproject/main` and code edits are only uncommitted, stage/commit only `AGENT_BOARD.md`; unrelated unstaged code remains untouched and does not need to be stashed.
-- If local history contains unpushed non-board commits, do **not** push that branch just to update the board. Use a clean temporary worktree based on `classproject/main`, append/commit only the board there, push it to `main`, then remove the worktree. This prevents unfinished code commits from hitching a ride.
-- A board commit on `main` is coordination only; it is not approval or confirmation of unfinished code/experiment changes. Never force-push the board.
-- On a board conflict, preserve the remote log verbatim and append the local unsent entry after the remote tail.
-- Keep coordination on the board; keep experiment evidence/configs/metrics under `experiments/`.
+- Protocol: [`AGENT_BOARD.md`](AGENT_BOARD.md). Authoritative append-only log: [`AGENT_BOARD.jsonl`](AGENT_BOARD.jsonl).
+- **Always inspect the latest remote log, not only the local copy:** `git fetch classproject main && git show classproject/main:AGENT_BOARD.jsonl`. Read the remote protocol spec too when its rules may have changed.
+- Re-check the latest remote board at session start, before `CLM`, before shared work, and before hand-off/final push.
+- File order in JSONL is authoritative. UTC `ts` is creation metadata only; never reorder records by time.
+- Use `CLM` before work the other agent could duplicate; close it with `DONE` or `BLK`. Corrections use `CORR` with `ref`; never mutate an old record.
+- Prefer `python scripts/agent_board.py` to validate, query, or append records.
+- **Board-only commits may be pushed to `main` independently of code** so coordination stays near-real-time. If code edits are only uncommitted and the branch is based on current `main`, stage/commit only the board files; no stash is needed.
+- If local history contains unpushed non-board commits, use a clean temporary worktree based on `classproject/main` for the board-only commit so unfinished code cannot hitch a ride.
+- On conflict, preserve the remote JSONL byte-for-byte and append the local unsent record after its tail. Never force-push.
+- A board commit is coordination only, not approval/confirmation of unfinished code or experiments. Experiment evidence/configs/metrics live under `experiments/`.
 
 ## Environment
 
