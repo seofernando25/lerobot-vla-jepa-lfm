@@ -1,0 +1,27 @@
+# Local environments / tools
+.venv/
+.venv-*/
+.tools/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Downloaded models, datasets, checkpoints, and experiment outputs
+models/
+data/
+runs/
+checkpoints/
+outputs/
+experiments/
+
+# Logs / caches
+*.log
+.cache/
+wandb/
+tensorboard/
+.DS_Store
+
+# Local secrets / environment overrides
+.env
+.env.*
+!.env.example

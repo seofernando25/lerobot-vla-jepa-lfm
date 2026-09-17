@@ -1,217 +1,125 @@
-<h3 align="center" style="font-size:48px; font-weight:bold; color:#9C276A; margin: 0;">
-  <a href="https://arxiv.org/abs/2602.10098" style="color:#9C276A; text-decoration: none;">
-    VLA-JEPA: Enhancing Vision-Language-Action Model with Latent World Model
-  </a>
-</h3>
+# VLA-JEPA + LFM2.5-VL on LIBERO
 
-<div align="center">
-<p>
-  <a href="https://arxiv.org/abs/2602.10098">
-    <img src="https://img.shields.io/badge/Paper-PDF-orange.svg" alt="Paper PDF">
-  </a>
-  <a href="https://ginwind.github.io/VLA-JEPA/">
-    <img src="https://img.shields.io/badge/Project-Page-Green.svg" alt="Project Page">
-  </a>
-  <a href="https://huggingface.co/ginwind/VLA-JEPA">
-    <img src="https://img.shields.io/badge/🤗-Hugging_Face-yellow.svg" alt="Hugging Face">
-  </a>
-  <a href="https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg" alt="Code License">
-  </a>
-</p>
-<p align="center">
-  ⭐ If our project helps you, please give us a star on GitHub to support us!
-</p>
-</div>
+Computer vision course project exploring whether a much smaller pretrained vision-language model can replace the Qwen3-VL backbone in **VLA-JEPA** for robot action prediction.
 
-<div align="center">
-  <img src="assets/VLA-JEPA.png" width="90%" alt="VLA-JEPA overview" />
-</div>
-  
-<a id="table-of-contents"></a>
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-- [🚧 TODO](#todo)
-- [⚙️ Environment Setup](#environment-setup)
-- [🔥 Training](#training)
-  - [0️⃣ Pretrained Model Preparation](#pretrained-model-preparation)
-  - [1️⃣ Data Preparation](#data-preparation)
-  - [2️⃣ Start Training](#start-training)
-  - [3️⃣ Optional: Custom Dataset Training](#optional-custom-dataset-training)
-- [📊 Evaluation](#evaluation)
-  - [LIBERO](#libero)
-  - [LIBERO-Plus](#libero-plus)
-  - [SimplerEnv](#simplerenv)
-- [🤝 Acknowledgement](#acknowledgement)
-- [📝 Citation](#citation)
-  
-<a id="todo"></a>
-## 🚧 TODO
-- [x] Partial training code
-- [x] LIBERO evaluation code
-- [x] LIBERO-Plus evaluation code
-- [x] SimplerEnv evaluation code
-- [x] Training codes for custom datasets
+This repository is a derivative of [ginwind/VLA-JEPA](https://github.com/ginwind/VLA-JEPA). The upstream git history is preserved. The project adds an LFM2.5-VL-450M backbone path, feature adapters, single-GPU/`uv` setup, and LIBERO experiments. **Model weights, datasets, checkpoints, and videos are intentionally not committed.**
 
-<a id="environment-setup"></a>
-## ⚙️ Environment Setup
+## Research question
 
-```
-git clone https://github.com/ginwind/VLA-JEPA
+The original VLA-JEPA setup uses Qwen3-VL-2B as its VLM. We test whether [LiquidAI/LFM2.5-VL-450M](https://huggingface.co/LiquidAI/LFM2.5-VL-450M) can provide useful vision-language conditioning with substantially fewer parameters and lower memory use.
 
-# Create conda environment
-conda create -n VLA_JEPA python=3.10 -y
-conda activate VLA_JEPA
+LFM2.5-VL emits 1024-dimensional text states while the pretrained VLA-JEPA action/world-model stack expects 2048 dimensions. Two variants are included:
 
-# Install requirements
-pip install -r requirements.txt
+1. **Frozen LFM + linear bridge**: a trainable 1024→2048 projection while LFM stays frozen.
+2. **Adapted LFM**: an RMSNorm + residual two-layer MLP bridge, with the LFM multimodal projector and final four language blocks unfrozen at small learning rates. The residual branch is zero-initialized so the adapter starts from the successful linear/identity-like mapping.
 
-# Install FlashAttention2
-pip install flash-attn --no-build-isolation
+## Main code changes
 
-# Install project
-pip install -e .
-```
+- `starVLA/model/modules/vlm/LFM2_5.py` — LFM2.5-VL interface and adapters.
+- `starVLA/model/modules/vlm/__init__.py` — VLM dispatch for LFM2.5-VL.
+- `starVLA/dataloader/__init__.py` — configurable DataLoader workers/prefetch.
+- `examples/LIBERO/model2libero_interface.py` — fixes singleton robot-state shape during policy serving.
+- `starVLA/model/modules/vlm/QWen3.py` / `QWen2_5.py` — configurable SDPA attention fallback instead of requiring FlashAttention2.
+- `scripts/configs/class_project/` — exact 1,000-step configs used for the comparison.
 
-This repository's code is based on the [starVLA](https://github.com/starVLA/starVLA).
+## Diagnostic results
 
-<a id="training"></a>
-## 🔥 Training
+All three runs below used the LIBERO mixture, seed 42, batch size 2, 1,000 optimizer steps, the same pretrained VLA-JEPA action/world-model initialization, and evaluations at steps 250/500/750/1000 on an RTX 3090 24 GB.
 
-<a id="pretrained-model-preparation"></a>
-### 0️⃣ Pretrained Model Preparation
-Download the [Qwen3-VL-2B](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct) and the [V-JEPA2 encoder](https://huggingface.co/facebook/vjepa2-vitl-fpc64-256).  
+| 1,000-step endpoint | Qwen3-VL-2B | LFM2.5-450M frozen | LFM2.5-450M adapted |
+|---|---:|---:|---:|
+| Action MAE ↓ | 0.2070 | 0.2231 | **0.1870** |
+| Normalized distance ↓ | 0.03261 | 0.03336 | **0.03103** |
+| Action loss ↓ | **0.0775** | 0.1426 | 0.1684 |
+| JEPA loss ↓ | **0.13178** | 0.13192 | 0.13230 |
+| Mean model step | 0.469 s | **0.431 s** | 0.469 s |
+| Checkpoint size | 5.74 GiB | 2.16 GiB | **2.17 GiB** |
+| Total model parameters | 2.77B | 1.09B | 1.10B |
+| Trainable parameters | 316.8M | 318.9M | 404.9M |
+| LIBERO-spatial pilot | 0/10 | 0/10 | 0/10 |
 
-<a id="data-preparation"></a>
-### 1️⃣ Data Preparation
+The adapted LFM endpoint had 16.2% lower MAE than frozen LFM and 9.7% lower MAE than the Qwen3 endpoint in this diagnostic run. The world-model loss stayed nearly unchanged, suggesting most of the difference is in action conditioning rather than the JEPA objective.
 
-Download the following datasets:
+### Important evaluation caveat
 
-- [ssv2](https://huggingface.co/datasets/morpheushoc/something-something-v2)
-- [Droid](https://huggingface.co/datasets/IPEC-COMMUNITY/droid_lerobot)
-- [LIBERO](https://huggingface.co/collections/IPEC-COMMUNITY/libero-benchmark-dataset)
-- [BridgeV2](https://huggingface.co/datasets/IPEC-COMMUNITY/bridge_orig_lerobot)
-- [Fractal](https://huggingface.co/datasets/IPEC-COMMUNITY/fractal20220817_data_lerobot)
+These are **course-project diagnostic results, not an official LIBERO benchmark reproduction**. The training script's periodic action metrics are computed on another training batch, not a held-out validation set. The closed-loop LIBERO result used only one rollout per each of the 10 spatial tasks; all three 1,000-step checkpoints scored 0/10. A proper report should use a held-out/fixed evaluation panel and the official multi-rollout LIBERO protocol.
 
-For robot datasets, you need to add a `modality.json` file under the `meta/` subdirectory of each LeRobot dataset. The `modality.json` files for LIBERO, BridgeV2, Fractal, and Droid are provided under `./examples` (BridgeV2 and Fractal are under `./examples/SimplerEnv`).
+## Hardware observations
 
-<a id="start-training"></a>
-### 2️⃣ Start Training
-Depending on whether you are conducting pre-training or post-training, select the appropriate training script and YAML configuration file from the [`/scripts`](./scripts) directory.
+On an RTX 3090 24 GB, frozen LFM reached batch 16 at ~19.6 GiB peak VRAM and 100% utilization. The adapted last-four-block version fit batch 8 at ~17.5 GiB and 100% utilization. For the accuracy comparison above, batch 2 was kept fixed to match Qwen3.
 
-Ensure the following configurations are updated in the YAML file:
-- `framework.qwenvl.basevlm` and `framework.vj2_model.base_encoder` should be set to the paths of your respective checkpoints.
-- Update `datasets.vla_data.data_root_dir`, `datasets.video_data.video_dir`, and `datasets.video_data.text_file` to match the paths of your datasets.
+## Setup with `uv`
 
-Once the configurations are updated, you can proceed to start the training process.
+Python 3.10 was used.
 
-<a id="optional-custom-dataset-training"></a>
-### 3️⃣ Optional: Custom Dataset Training
-VLA-JEPA supports training on both robot datasets and human video datasets. You can run custom training by specifying robot data and/or human videos in your configuration.
-
-- **Robot Data:** We support training with datasets in the LeRobot v2.1 format. Convert your custom robot dataset to LeRobot v2.1 first.
-  - Define a custom robot dataset config class in [`data_config.py`](./starVLA/dataloader/gr00t_lerobot/data_config.py) (its video-key fields should match the values predefined in `modality.json`; see [`modality.json`](./examples/Droid/modality.json)), and add a mapping from `robot_type` to the config class in `ROBOT_TYPE_CONFIG_MAP`.
-  - `robot_type` is specified by `DATASET_NAMED_MIXTURES` in [`mixtures.py`](./starVLA/dataloader/gr00t_lerobot/mixtures.py): the dict key corresponds to `datasets.vla_data.data_mix` in the YAML training config, and the value is a tuple of sub-datasets. Each sub-dataset tuple contains three items: subdirectory, version, and `robot_type`. The `robot_type` selects the corresponding config for state/action normalization and other field alignment.
-  - Finally, update the YAML config accordingly and launch training.
-
-- **Human Video:** You can implement your own DataLoader and update the mapping from `dataset_py` to a dataloader in `build_dataloader` within [`./starVLA/dataloader/__init__.py`](./starVLA/dataloader/__init__.py). Alternatively, use our video dataloader and configure `datasets.video_data` in the YAML file:
-  - dataset_py: use our video dataloader (no change needed)
-  - video_dir: directory that contains video files; each file is named by its `index`, and the suffix is controlled by `extensions`
-  - text_file: a headerless CSV where the first column is `index` and the second column is the video text description
-  - CoT_prompt: prompt template for latent-action training (no change needed)
-  - extensions: list of video file extensions
-
-
-
-<a id="evaluation"></a>
-## 📊 Evaluation
-
-Download the model checkpoints from Hugging Face: https://huggingface.co/ginwind/VLA-JEPA
-
-**Environment:** Install the required Python packages into your `VLA-JEPA` environment:
 ```bash
-pip install tyro matplotlib mediapy websockets msgpack
-pip install numpy==1.24.4
+git clone https://github.com/seofernando25/vla-jepa-lfm25-libero.git
+cd vla-jepa-lfm25-libero
+
+bash scripts/setup_uv_lfm.sh
 ```
 
-<a id="libero"></a>
-### LIBERO
+The LFM path uses Transformers 5.x because LFM2.5's tokenizer/processor metadata requires the newer API. The original upstream `requirements.txt` is retained for the Qwen-oriented environment; `requirements-lfm.txt` is the tested LFM environment.
 
-- **LIBERO setup:** Prepare the LIBERO benchmark in a separate conda environment following the official LIBERO instructions: https://github.com/Lifelong-Robot-Learning/LIBERO
+## Download pretrained assets
 
-- **Configuration:** In the downloaded checkpoint folder, update `config.json` and `config.yaml` to point the following fields to your local checkpoints:
-  - `framework.qwenvl.basevlm`: path to the Qwen3-VL-2B checkpoint
-  - `framework.vj2_model.base_encoder`: path to the V-JEPA encoder checkpoint
+Create the expected local directories (all are ignored by git):
 
-- **Evaluation script:** Edit [`examples/LIBERO/eval_libero.sh`](./examples/LIBERO/eval_libero.sh) and set the `LIBERO_HOME` environment variable (line 4) to your local LIBERO code path, and set the `sim_python` variable (line 9) to the Python executable of the LIBERO conda environment. Finally, set the `your_ckpt` variable (line 11) to the path of the downloaded `LIBERO/checkpoints/VLA-JEPA-LIBERO.pt`.
-
-- **Run evaluation:** Launch the evaluation (the script runs the four task suites in parallel across 4 GPUs):
 ```bash
-bash ./examples/LIBERO/eval_libero.sh
+mkdir -p models data runs
 ```
 
-<a id="libero-plus"></a>
-### LIBERO-Plus
+Required assets:
 
+- `models/LFM2.5-VL-450M` — `LiquidAI/LFM2.5-VL-450M`
+- `models/Qwen3-VL-2B-Instruct` — `Qwen/Qwen3-VL-2B-Instruct` for the baseline
+- `models/vjepa2-vitl-fpc64-256` — `facebook/vjepa2-vitl-fpc64-256`
+- `models/VLA-JEPA-Pretrain/VLA-JEPA-pretrain.pt` — upstream VLA-JEPA pretraining checkpoint
+- `data/LEROBOT_LIBERO_DATA` — LIBERO LeRobot datasets used by VLA-JEPA
 
-- **LIBERO-Plus setup:** Clone the LIBERO-Plus repository: https://github.com/sylvestf/LIBERO-plus. In [`./examples/LIBERO-Plus/libero_plus_init.py`](./examples/LIBERO-Plus/libero_plus_init.py), update line 121 to point to your `LIBERO-Plus/libero/libero/benchmark/task_classification.json`. Replace the original `LIBERO-Plus/libero/libero/benchmark/__init__.py` with the provided modified implementation (see [`./examples/LIBERO-Plus/libero_plus_init.py`](./examples/LIBERO-Plus/libero_plus_init.py)) to enable evaluation over perturbation dimensions. Finally, follow the official LIBERO-Plus installation instructions and build the benchmark in a separate conda environment.
+For example, with the Hugging Face CLI:
 
-- **Configuration:** In the downloaded checkpoint folder, update `config.json` and `config.yaml` to point the following fields to your local checkpoints:
-  - `framework.qwenvl.basevlm`: path to the Qwen3-VL-2B checkpoint
-  - `framework.vj2_model.base_encoder`: path to the V-JEPA encoder checkpoint
-
-- **Evaluation script:** Edit [`examples/LIBERO-Plus/eval_libero_plus.sh`](./examples/LIBERO-Plus/eval_libero_plus.sh) and set the `LIBERO_HOME` environment variable (line 4) to your local LIBERO-Plus code path, and set the `sim_python` variable (line 9) to the Python executable of the LIBERO-Plus conda environment. Finally, set the `your_ckpt` variable (line 11) to the path of the downloaded `LIBERO/checkpoints/VLA-JEPA-LIBERO.pt`.
-
-- **Run evaluation:** Launch the evaluation (the script runs the seven pertubation dimensions in parallel across 7 GPUs):
 ```bash
-bash ./examples/LIBERO-Plus/eval_libero_plus.sh
+hf download LiquidAI/LFM2.5-VL-450M --local-dir models/LFM2.5-VL-450M
+hf download Qwen/Qwen3-VL-2B-Instruct --local-dir models/Qwen3-VL-2B-Instruct
+hf download facebook/vjepa2-vitl-fpc64-256 --local-dir models/vjepa2-vitl-fpc64-256
+hf download ginwind/VLA-JEPA --include 'Pretrain/*' --local-dir models/VLA-JEPA-HF
+
+mkdir -p models/VLA-JEPA-Pretrain
+ln -sf ../VLA-JEPA-HF/Pretrain/checkpoints/VLA-JEPA-pretrain.pt models/VLA-JEPA-Pretrain/VLA-JEPA-pretrain.pt
 ```
 
-<a id="simplerenv"></a>
-### SimplerEnv
+Follow the upstream VLA-JEPA instructions for the LIBERO LeRobot datasets and their `modality.json` metadata.
 
-- **SimplerEnv setup:** Clone the SimplerEnv repository: https://github.com/simpler-env/SimplerEnv and follow the official SimplerEnv installation instructions and build the benchmark in a separate conda environment.
+## Run the class-project experiments
 
-- **Configuration:** In the downloaded checkpoint folder, update `config.json` and `config.yaml` to point the following fields to your local checkpoints:
-  - `framework.qwenvl.basevlm`: path to the Qwen3-VL-2B checkpoint
-  - `framework.vj2_model.base_encoder`: path to the V-JEPA encoder checkpoint
+Adapted LFM experiment:
 
-- **Evaluation script:** Edit [`examples/SimplerEnv/eval_files/auto_eval_scripts/batch_evaluate.sh`](examples/SimplerEnv/eval_files/auto_eval_scripts/batch_evaluate.sh) and set the `SimplerEnv_PATH` environment variable to your local SimplerEnv code path, and set the `sim_python` variable to the Python executable of the SimplerEnv conda environment. Finally, set the `MODEL_PATH` variable to the path of the downloaded `SimplerEnv/checkpoints/VLA-JEPA-Simpler.pt`.
-
-- **Run evaluation:** Launch the evaluation:
 ```bash
-bash examples/SimplerEnv/eval_files/auto_eval_scripts/batch_evaluate.sh
+bash scripts/run_class_project.sh \
+  scripts/configs/class_project/lfm25_450m_rmsmlp_last4.yaml
 ```
 
-- **Compute success rates:** After the previous step, SimplerEnv will generate evaluation rollout videos for each sub-task. You can then compute task success rates with [`examples/SimplerEnv/eval_files/auto_eval_scripts/calc_success_rate.sh`](examples/SimplerEnv/eval_files/auto_eval_scripts/calc_success_rate.sh) as follows:
+Frozen-LFM ablation:
+
 ```bash
-# <task_suite> must be one of: pick_coke_can | move_near | drawer | long_horizon_apple_in_drawer | bridge_put_on.
-# Note: bridge_put_on corresponds to the WidowX robot evaluation; the other four correspond to the Google Robot evaluation.
-# <model_path> is the path to `VLA-JEPA-Simpler.pt`, and <log_dir> is the root directory that contains the generated videos
-# (by default, this is saved under `./results` within the evaluation output directory).
-bash ./examples/SimplerEnv/eval_files/auto_eval_scripts/calc_success_rate.sh <task_suite> <model_path> <log_dir>
+bash scripts/run_class_project.sh \
+  scripts/configs/class_project/lfm25_450m_frozen.yaml
 ```
 
-**Notes:** Ensure each process has access to a GPU and verify that all checkpoint paths in the configuration files are correct before running the evaluation. For LIBERO, we evaluate the 4 task suites in parallel on 4 GPUs. For LIBERO-Plus and SimplerEnv, we run evaluations in parallel on 8 GPUs. If you have fewer GPUs available, modify the parallelization logic in the launch scripts accordingly.
+Qwen3 baseline config is at `scripts/configs/class_project/qwen3_2b_baseline.yaml`. For the closest reproduction of the original Qwen setup, use the upstream dependency environment (`requirements.txt`).
 
+## Attribution and licensing
 
-<a id="acknowledgement"></a>
-## 🤝 Acknowledgement
+This project modifies and extends **VLA-JEPA**, which itself is based on starVLA and V-JEPA2. Please cite and credit the upstream projects when using this code.
 
-We extend our sincere gratitude to the [starVLA](https://github.com/starVLA/starVLA) project and the [V-JEPA2](https://github.com/facebookresearch/vjepa2) project for their invaluable open-source contributions.
+The upstream VLA-JEPA repository currently contains inconsistent root licensing metadata (its README badge, `pyproject.toml`, and individual source-file headers do not all state the same thing, and its referenced root `LICENSE` file is absent in the checkout used here). This derivative therefore **does not assert a new blanket license over upstream code**. Refer to the [upstream VLA-JEPA repository](https://github.com/ginwind/VLA-JEPA) and individual file headers for applicable terms. LFM2.5 model weights are not redistributed here and remain subject to Liquid AI's model license.
 
-<a id="citation"></a>
-## 📝 Citation
+The original upstream README from the base checkout is preserved as [`UPSTREAM_README.md`](UPSTREAM_README.md).
 
-If you find our code or models useful in your work, please cite [our paper](https://arxiv.org/abs/2602.10098):
-```
-@misc{vlajepa2026,
-          title={VLA-JEPA: Enhancing Vision-Language-Action Model with Latent World Model}, 
-          author={Jingwen Sun and Wenyao Zhang and Zekun Qi and Shaojie Ren and Zezhi Liu and Hanxin Zhu and Guangzhong Sun and Xin Jin and Zhibo Chen},
-          year={2026},
-          eprint={2602.10098},
-          archivePrefix={arXiv},
-          primaryClass={cs.RO},
-          url={https://arxiv.org/abs/2602.10098}, 
-    }
-```
+## References
+
+- VLA-JEPA: *Enhancing Vision-Language-Action Model with Latent World Model*, ECCV 2026 / arXiv:2602.10098.
+- Liquid AI, LFM2.5-VL-450M.
+- LIBERO benchmark.
+- V-JEPA2.

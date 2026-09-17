@@ -111,7 +111,10 @@ class M1Inference:
         }
 
         if state is not None:
-            vla_input["state"] = [state]  # add batch dim
+            state = np.asarray(state)
+            if state.ndim == 1:
+                state = state[None, :]  # preserve singleton state horizon: [1, D]
+            vla_input["state"] = [state]  # [B, T_state, D]
         
         action_chunk_size = self.action_chunk_size
         if step % action_chunk_size == 0:
