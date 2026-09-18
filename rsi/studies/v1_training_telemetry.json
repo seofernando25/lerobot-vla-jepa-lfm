@@ -1,0 +1,627 @@
+{
+  "generated_at_unix": 1789757408.7590513,
+  "runs": {
+    "baseline": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3118,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7931443200,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "eval_loss": 0.3118,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7931443200,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3118,
+        "wall_seconds": 234.72706713504158
+      },
+      "trainable_parameter_count": 640703111,
+      "training_curve": [
+        {
+          "action_loss": 0.342,
+          "data_s": 0.133,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.43,
+          "loss": 0.481,
+          "lr": 8.5e-05,
+          "mem_gb": 7.39,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.473,
+          "update_s": 0.337,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.249,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.884,
+          "loss": 0.381,
+          "lr": 3.7e-05,
+          "mem_gb": 7.39,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.345,
+          "update_s": 0.341,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0001": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3132,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7953506304,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 339.35673319001216,
+        "eval_loss": 0.3132,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7953506304,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3132,
+        "wall_seconds": 242.7303354110336
+      },
+      "trainable_parameter_count": 642014855,
+      "training_curve": [
+        {
+          "action_loss": 0.357,
+          "data_s": 0.134,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.341,
+          "loss": 0.496,
+          "lr": 8.5e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.496,
+          "update_s": 0.359,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.275,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.918,
+          "loss": 0.407,
+          "lr": 3.7e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.361,
+          "update_s": 0.357,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0002": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3169,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7944624640,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 361.9700531549752,
+        "eval_loss": 0.3169,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7944624640,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3169,
+        "wall_seconds": 240.53301366697997
+      },
+      "trainable_parameter_count": 642021002,
+      "training_curve": [
+        {
+          "action_loss": 0.355,
+          "data_s": 0.132,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.294,
+          "loss": 0.494,
+          "lr": 8.5e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.484,
+          "update_s": 0.349,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.257,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.902,
+          "loss": 0.389,
+          "lr": 3.7e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.36,
+          "update_s": 0.356,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0003": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3172,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7946401792,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 368.18069673492573,
+        "eval_loss": 0.3172,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7946401792,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3172,
+        "wall_seconds": 239.7323351339437
+      },
+      "trainable_parameter_count": 641456775,
+      "training_curve": [
+        {
+          "action_loss": 0.34,
+          "data_s": 0.134,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.517,
+          "loss": 0.479,
+          "lr": 8.5e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.502,
+          "update_s": 0.364,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.253,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.802,
+          "loss": 0.384,
+          "lr": 3.7e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.344,
+          "update_s": 0.341,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0004": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3111,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7955079168,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 364.1951665249653,
+        "eval_loss": 0.3111,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7955079168,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3111,
+        "wall_seconds": 243.33294085902162
+      },
+      "trainable_parameter_count": 642801287,
+      "training_curve": [
+        {
+          "action_loss": 0.356,
+          "data_s": 0.134,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.192,
+          "loss": 0.495,
+          "lr": 8.5e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.497,
+          "update_s": 0.36,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.268,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 2.003,
+          "loss": 0.399,
+          "lr": 3.7e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.362,
+          "update_s": 0.358,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0005": {
+      "eval_points": [
+        {
+          "eval_loss": 0.2861,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7960322048,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 306.3485468889121,
+        "eval_loss": 0.2861,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7960322048,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.2861,
+        "wall_seconds": 234.72384952998254
+      },
+      "trainable_parameter_count": 643325575,
+      "training_curve": [
+        {
+          "action_loss": 0.352,
+          "data_s": 0.131,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.352,
+          "loss": 0.49,
+          "lr": 8.5e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.47,
+          "update_s": 0.336,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.241,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.897,
+          "loss": 0.373,
+          "lr": 3.7e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.347,
+          "update_s": 0.343,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0006": {
+      "eval_points": [
+        {
+          "eval_loss": 0.31,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7965646848,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 327.38052319700364,
+        "eval_loss": 0.31,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7965646848,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.31,
+        "wall_seconds": 243.7438708259724
+      },
+      "trainable_parameter_count": 643858055,
+      "training_curve": [
+        {
+          "action_loss": 0.354,
+          "data_s": 0.135,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.334,
+          "loss": 0.493,
+          "lr": 8.5e-05,
+          "mem_gb": 7.42,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.497,
+          "update_s": 0.359,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.261,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.864,
+          "loss": 0.393,
+          "lr": 3.7e-05,
+          "mem_gb": 7.42,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.363,
+          "update_s": 0.358,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0007": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3153,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7944563200,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 343.5346796789672,
+        "eval_loss": 0.3153,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7944563200,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3153,
+        "wall_seconds": 243.33502522401977
+      },
+      "trainable_parameter_count": 642015111,
+      "training_curve": [
+        {
+          "action_loss": 0.353,
+          "data_s": 0.134,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.269,
+          "loss": 0.492,
+          "lr": 8.5e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.497,
+          "update_s": 0.359,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.277,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.856,
+          "loss": 0.408,
+          "lr": 3.7e-05,
+          "mem_gb": 7.4,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.362,
+          "update_s": 0.358,
+          "wm_loss": 0.132
+        }
+      ]
+    },
+    "n0008": {
+      "eval_points": [
+        {
+          "eval_loss": 0.3204,
+          "step": 500
+        }
+      ],
+      "eval_samples": {
+        "count": 60
+      },
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 3090",
+        "peak_allocated_bytes": 7955079168,
+        "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+      },
+      "metrics": {
+        "attempt_wall_seconds": 324.23402305005584,
+        "eval_loss": 0.3204,
+        "eval_samples": {
+          "count": 60
+        },
+        "hardware": {
+          "gpu": "NVIDIA GeForce RTX 3090",
+          "peak_allocated_bytes": 7955079168,
+          "python": "3.12.11 (main, Jun 29 2025, 16:24:38) [Clang 20.1.4 ]"
+        },
+        "metric_provenance": "pinned LeRobot held-out eval_loss log (4 decimal places)",
+        "optimizer_steps": 500,
+        "score": -0.3204,
+        "wall_seconds": 238.93150926497765
+      },
+      "trainable_parameter_count": 642801287,
+      "training_curve": [
+        {
+          "action_loss": 0.352,
+          "data_s": 0.13,
+          "episode": 3,
+          "epoch": 0.01,
+          "grad_norm": 2.179,
+          "loss": 0.491,
+          "lr": 8.5e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.001,
+          "samples": 400,
+          "samples_per_s": 4.0,
+          "step": 200,
+          "step_s": 0.477,
+          "update_s": 0.344,
+          "wm_loss": 0.139
+        },
+        {
+          "action_loss": 0.287,
+          "data_s": 0.001,
+          "episode": 7,
+          "epoch": 0.02,
+          "grad_norm": 1.814,
+          "loss": 0.419,
+          "lr": 3.7e-05,
+          "mem_gb": 7.41,
+          "prep_s": 0.0,
+          "samples": 800,
+          "samples_per_s": 6.0,
+          "step": 400,
+          "step_s": 0.357,
+          "update_s": 0.353,
+          "wm_loss": 0.132
+        }
+      ]
+    }
+  },
+  "schema_version": 1,
+  "source": "rsi-v1-complete"
+}
