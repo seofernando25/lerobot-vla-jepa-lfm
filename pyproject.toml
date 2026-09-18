@@ -27,6 +27,7 @@ packages = ["src/lerobot_policy_vla_jepa_lfm"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

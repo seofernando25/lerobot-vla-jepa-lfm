@@ -1,0 +1,10 @@
+{
+  "training_steps": 10000,
+  "seed": 42,
+  "suite": "libero_spatial",
+  "n_episodes": 10,
+  "eval_batch_size": 1,
+  "qwen_checkpoint": "lerobot/VLA-JEPA-LIBERO",
+  "note": "Separate confirmation template, not part of the search budget. Freeze before execution.",
+  "expected_suite_rollouts": 100
+}

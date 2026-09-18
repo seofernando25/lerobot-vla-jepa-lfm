@@ -13,7 +13,7 @@ Machine-first F/N coordination protocol. **Authoritative log:** `AGENT_BOARD.jso
 - Before append, refresh remote state. Push board-only commits to `main` promptly and independently from unfinished code.
 - If local history has unpushed non-board commits, use a clean worktree based on `origin/main` for the board-only commit.
 - On conflict, preserve the remote log byte-for-byte and append the unsent local record after its tail. Never force-push.
-- Board commits are coordination, not approval of code/experiments. Evidence/configs/metrics belong under `experiments/`.
+- Board commits are coordination, not approval of code/experiments. RSI runtime evidence lives under ignored `.rsi/`; tracked protocol/configuration lives under `rsi/`. Never expose old experiment records to discovery workers.
 - Prefer `python scripts/agent_board.py` for validation, querying, and appends.
 
 ## Record schema

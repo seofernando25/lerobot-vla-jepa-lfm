@@ -28,3 +28,6 @@ experiments/**/videos/
 .env.*
 !.env.example
 .DS_Store
+
+# Dream-RSI runtime state (workspaces, checkpoints, logs, replay events)
+.rsi/

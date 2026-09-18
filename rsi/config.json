@@ -1,0 +1,27 @@
+{
+  "probe_steps": 500,
+  "K1": 6,
+  "K2": 6,
+  "max_outer_iterations": 3,
+  "max_real_attempts": 18,
+  "W": 1,
+  "beta1": 0.01,
+  "failure_score": -1000000.0,
+  "dataset": {
+    "repo_id": "IPEC-COMMUNITY/libero_spatial_no_noops_1.0.0_lerobot",
+    "sandbox_root": "/tmp/dataset",
+    "eval_split": 0.1,
+    "version": "v3.0"
+  },
+  "max_eval_samples": 64,
+  "seed": 42,
+  "batch_size": 2,
+  "num_workers": 8,
+  "precision": "bf16",
+  "policy_versions": 4,
+  "replay_trajectories": 100,
+  "agent_timeout_seconds": 1800,
+  "probe_timeout_seconds": 14400,
+  "policy_timeout_seconds": 5,
+  "lerobot_sha": "30074f7f1358b3c015ae1750017200e86e9c4eb6"
+}

@@ -1,7 +1,0 @@
-id: EXP-001
-status: completed
-legacy: true
-title: Legacy ginwind/starVLA Qwen3 vs LFM2.5 pilot
-framework: ginwind/VLA-JEPA + local LFM adapter
-reference_tag: legacy-ginwind-exp001
-note: Predates the LeRobot pivot and the per-run schema. See README.md and metrics.json.

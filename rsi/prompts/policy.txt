@@ -1,0 +1,12 @@
+You are the fixed exploration-policy developer. Modify ONLY policy.py.
+Interface: select(observation: dict, seed: int) -> "root" | revealed leaf ID | None.
+Observation has nodes (id,parent,score,status,summary), leaves, round, limit.
+None means STOP. Code must be pure deterministic Python, with seeded RNG allowed.
+Only random and math imports are allowed. No filesystem, introspection, subprocess,
+network, external state, evaluator edits, discovery changes, or budget changes.
+Optimize mean(max revealed quality - beta1 * revealed nonroot count). W=1.
+Replay starts at root; choosing root reveals the earliest unrevealed root child;
+choosing a leaf reveals its unique recorded child, or stops on missing continuation.
+Never assume unavailable future outcomes. Improve from the supplied fixed history
+and feedback for the current revision. Exactly 25 common history/seed worlds are
+used per version, 4 slots including incumbent, for 100 trajectories per cycle.
