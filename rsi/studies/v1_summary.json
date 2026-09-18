@@ -1,0 +1,184 @@
+{
+  "baseline_eval_loss": 0.3118,
+  "best_eval_loss": 0.2861,
+  "best_node": "n0005",
+  "code_commit": "cdc503ddd2ed226963c70804d372c29a98bd9e09",
+  "cycles_completed": 2,
+  "dream_trajectories": 200,
+  "finished_reason": "policy_STOP",
+  "journal_events": 42,
+  "journal_last_event_sha256": "128b0b15beea74a96a0e6927e556766d2fb0f4a3e9340a12332b8850e7de9f35",
+  "measured_outcomes": 8,
+  "nodes": [
+    {
+      "eval_loss": 0.3132,
+      "id": "n0001",
+      "parent": "root",
+      "score": -0.3132,
+      "status": "ok",
+      "summary": "Implemented within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** Context retrieval can improve on the base\u2019s independent token projection.\n- **Mechanism family:** LFM contextual residual adapter.\n- **Substantive change:** Added padding-aware, four-head attention with width 256 alongside the original linear bridge. Zero-initialized output preserves initial conditioning.\n- **Trainability:** Adds 1,311,744 trainable parameters. Existing backbone and downstream trainability remain unchanged.\n- **Expected effect:** Better visual/instruction conditioning within the fixed 500-step budget; improvement is unmeasured.\n- **Implementation checks:** Python syntax checks passed; prohibited method overrides are absent. No training or evaluation ran.\n- **Limitations:** PyTorch is unavailable locally, preventing runtime and gradient checks. This is a verification-environment limitation, not evidence of mechanism failure. External measurement must establish performance against the root\u2019s 0.3118 loss.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "3d59136c1f9bc60f004d79b692f4aba671f5307cb2f2cd8d89949490aac7cd8a",
+        "src/lerobot_policy_vla_jepa_lfm/context_adapter.py": "66dca3be91f86cfd56fca9be5686b669cc5f1799b4449ef667f7ec8207ac691d",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "5964b132640441d7b4812702c354e87847287c8de3661afdfddfce20a053e40a",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "7ec356a0adab6defd2bbb15c2dfc1f3ba2b18b31ce8b41c498a9375f4c163ff3",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.3169,
+      "id": "n0002",
+      "parent": "root",
+      "score": -0.3169,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** Earlier LFM layers retain useful conditioning information missing from the final layer.\n- **Mechanism family:** Multi-depth representation fusion.\n- **Substantive change:** Added per-token routing across three intermediate depths, with nonlinear projections and a zero-initialized residual output preserving initial conditioning.\n- **Trainability:** Adds 1,317,891 trainable parameters; existing trainability remains unchanged.\n- **Expected effect:** Richer conditioning could improve learning within 500 steps; improvement is unmeasured.\n- **Implementation checks:** Syntax and prohibited-override checks passed. Hook stand-ins verified ordering and cleanup on success and exceptions.\n- **Limitations:** PyTorch is unavailable, blocking tensor and gradient checks. No training or evaluation ran. The observed n0001 result supports a probe performance regression, not an implementation failure or general mechanism failure.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "752b187ec94b3d51e809c6bcb3c2a7ac6b4fa817170b66f11e62395707ee8b4a",
+        "src/lerobot_policy_vla_jepa_lfm/depth_fusion.py": "5286cddfe50710849d462530c97d8901dadb691c29744506854c2909650c1102",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "2def7859755b85f7acf6feddbe780f904f5e370e6e5c107faec3b676f1eea18b",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "bb69b3d79af90c4b4798fb4e41bec3319632731f629f29def61ca1178e1e9f7c",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.3172,
+      "id": "n0003",
+      "parent": "root",
+      "score": -0.3172,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** Adapting internal LFM representations may improve conditioning beyond frozen-feature readout adapters.\n- **Mechanism family:** Decoder low-rank adaptation (LoRA).\n- **Substantive change:** Rank-8 residual updates on linear projections in the final four decoder blocks. Zero-initialized outputs preserve the initial function.\n- **Trainability changes:** New LoRA matrices are trainable; pretrained LFM tensors remain frozen by default. Existing bridge and downstream trainability remain unchanged.\n- **Expected effect:** Better task-specific representations within the fixed 500-step budget; improvement remains unmeasured.\n- **Implementation checks:** Syntax and prohibited-override checks passed. Structural stand-ins verified block selection, original-module retention, disabling, and validation.\n- **Limitations:** PyTorch is unavailable locally, so tensor, gradient, and full integration checks remain unverified. No training or evaluation ran. Both supplied candidates showed measured probe regressions versus root, not implementation failures or general mechanism failures.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "535f08ef78949156d494d814fb143fba5c8ab9ca0aa527a35ca5581225b9502c",
+        "src/lerobot_policy_vla_jepa_lfm/decoder_lora.py": "e630fff637017e0cbc29a225cdb20a13c8f96c2b45778703262cd737ab8ac3e6",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "78197c6d8c24a2a275f42b9c4c89a4c41f1ac80aeadd1406ca4136dd2bceca82",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "e7abfb1cb37a54253aa6504f55177aaa75f9e36b682a34b662b5b35cfec2bec7",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.3111,
+      "id": "n0004",
+      "parent": "n0002",
+      "score": -0.3111,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** Controlling LFM feature scale and learning channel interactions improves conditioning within 500 steps.\n- **Mechanism family:** Normalized gated nonlinear representation bridge.\n- **Substantive change:** Disabled depth fusion by default. Added RMS normalization and a width-512 SwiGLU-style branch alongside a full-rank linear skip. Small nonzero output initialization permits immediate branch gradients.\n- **Trainability:** Bridge parameters trainable; backbone and downstream trainability unchanged. Net increase over n0002: 780,285 parameters.\n- **Expected effect:** More useful conditioning geometry; improvement remains unmeasured.\n- **Implementation checks:** All package sources compile, candidate defaults verified, prohibited overrides absent.\n- **Limitations:** PyTorch unavailable, so tensor and gradient checks remain unverified. No training or evaluation ran. All three observed candidates show probe performance regressions versus root, not demonstrated implementation failures or general mechanism failures.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "37e08c626bd17e31e1521a75126831c1afa32e61ee0e5d59dc0e1253130d3da4",
+        "src/lerobot_policy_vla_jepa_lfm/depth_fusion.py": "5286cddfe50710849d462530c97d8901dadb691c29744506854c2909650c1102",
+        "src/lerobot_policy_vla_jepa_lfm/gated_bridge.py": "341dd2230d2bedb2ed620b64c33dee49328cbac3043c86fb271b99a636e7d79a",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "62e3b77ee32b7624a046f088c9e8f286aeea5944dba1e7121c90391c9e67acfa",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "bb69b3d79af90c4b4798fb4e41bec3319632731f629f29def61ca1178e1e9f7c",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.2861,
+      "id": "n0005",
+      "parent": "n0001",
+      "score": -0.2861,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** Prompt-level context can improve nonlinear token conditioning within 500 steps.\n- **Mechanism family:** Globally conditioned gated representation bridge.\n- **Substantive change:** Replaced default attention residual with a width-512 gated branch conditioned on a padding-masked prompt mean. Retained the linear bridge; small nonzero output initialization enables immediate branch gradients.\n- **Trainability:** Adds 1,310,720 parameters relative to n0001. Backbone and downstream trainability unchanged.\n- **Expected effect:** Better context-dependent channel selection; improvement remains unmeasured.\n- **Implementation checks:** Package syntax checks passed; prohibited overrides absent. No training or evaluation ran.\n- **Limitations:** PyTorch unavailable, so tensor and gradient checks remain unverified. Supplied measurements show n0001\u2013n0003 regressions and a small n0004 improvement versus root\u2014not demonstrated implementation failures or general mechanism failures.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/conditioned_bridge.py": "a4eea6975620e8a95f21620a4e688d72a4966c340e940a7b2b2b6c4da16746e6",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "0b68e695d3694c50bf87736c2944ddb331e8caab39081e4b3ec2d71c29a1c178",
+        "src/lerobot_policy_vla_jepa_lfm/context_adapter.py": "66dca3be91f86cfd56fca9be5686b669cc5f1799b4449ef667f7ec8207ac691d",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "a368c5107a7076674295618b2fbcc561bdb1214588ec8625ae44990c3bc7bdb1",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "7ec356a0adab6defd2bbb15c2dfc1f3ba2b18b31ce8b41c498a9375f4c163ff3",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.31,
+      "id": "n0006",
+      "parent": "n0005",
+      "score": -0.31,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/**`.\n\n- **Hypothesis:** A single prompt mean blurs information useful for token-specific conditioning.\n- **Mechanism family:** Learned multi-slot context fusion.\n- **Substantive change:** Added four padding-aware learned context pools and per-token routing, supplementing n0005\u2019s mean-conditioned gate.\n- **Trainability:** Adds 532,480 trainable parameters. Backbone and downstream trainability remain unchanged.\n- **Expected effect:** More selective conditioning within 500 steps; improvement over n0005\u2019s measured 0.2861 remains unverified.\n- **Implementation checks:** All seven Python sources compile; defaults verified; prohibited overrides absent.\n- **Limitations:** PyTorch unavailable, preventing tensor and gradient checks. No training or evaluation ran. Prior regressions support probe performance failures, not demonstrated implementation failures or rejection of entire mechanism families.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/conditioned_bridge.py": "cef543bd2b37ac8d4b7dcbbfd291d7e83ee55f5533db2fe036434fbcd01a8004",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "089891a3a7cb302d1352cf2a3e5207f5cd474ecdb278bbc4728d4ecb3253c558",
+        "src/lerobot_policy_vla_jepa_lfm/context_adapter.py": "66dca3be91f86cfd56fca9be5686b669cc5f1799b4449ef667f7ec8207ac691d",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "068d9b1adbe234fc16814cfb6335b1d0dcb2cd8ab1f6e11f07d27f0a3cdfddb9",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "7ec356a0adab6defd2bbb15c2dfc1f3ba2b18b31ce8b41c498a9375f4c163ff3",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.3153,
+      "id": "n0007",
+      "parent": "root",
+      "score": -0.3153,
+      "status": "ok",
+      "summary": "Implemented solely within `src/lerobot_policy_vla_jepa_lfm/`.\n\n- **Hypothesis:** Context retrieval can improve conditioning beyond independent linear token projection.\n- **Mechanism family:** Residual attention adapter.\n- **Substantive change:** Added padding-aware, four-head attention with width 256 and an MLP before the existing bridge. Zero-initialized output preserves initial representations.\n- **Trainability:** Adds 1,312,000 trainable parameters; existing trainability remains unchanged.\n- **Expected effect:** Better access to image and instruction features within the fixed 500-step budget.\n- **Implementation checks:** Python compilation and static checks passed for mask wiring, initialization, trainability, and absence of prohibited overrides.\n- **Limitations:** No training or evaluation performed. PyTorch is unavailable, preventing runtime checks. Improvement over measured root loss **0.3118** remains unverified; no mechanism failure is established.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "cdb63e1b55354ad39bc3075fe55eef70284ef2526b9c95817f690b98144680c5",
+        "src/lerobot_policy_vla_jepa_lfm/context_adapter.py": "dcefe42e2a02135607d0c761cf3b6987d7e71a767a188afa44a866d9a9e8b8e6",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "9dc3ebb377c4aef5791ab2fa0278199d2ac1f9b1405d0e77bb1e0c9c834f4215",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "7ec356a0adab6defd2bbb15c2dfc1f3ba2b18b31ce8b41c498a9375f4c163ff3",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    },
+    {
+      "eval_loss": 0.3204,
+      "id": "n0008",
+      "parent": "n0007",
+      "score": -0.3204,
+      "status": "ok",
+      "summary": "Implemented only within `src/lerobot_policy_vla_jepa_lfm/`.\n\n- **Hypothesis:** Nonlinear feature lifting can improve frozen LFM conditioning within 500 steps.\n- **Mechanism family:** Gated residual conditioning bridge.\n- **Substantive change:** Replaced attention retrieval with a width-512 SiLU-gated branch projecting directly into 2048-dimensional conditioning. Zero initialization preserves initial outputs; token order and padding handling remain intact.\n- **Trainability:** Backbone remains frozen. New branch has 2,098,176 trainable parameters, 786,176 more than the parent branch.\n- **Expected effect:** Learn complementary conditioning features beyond the linear projection.\n- **Implementation checks:** All six Python modules compile; static wiring checks pass. Model source and prohibited methods remain unchanged.\n- **Limitations:** PyTorch is unavailable, preventing runtime checks. No training or evaluation performed. Parent results establish a measured regression, not implementation failure or family-wide saturation; this candidate\u2019s benefit remains unverified.",
+      "workspace_hash": {
+        "pyproject.toml": "43cd9f636a369abbac7b4b15ecd4ee5e159e432032c1d6290ba618f2af29ce20",
+        "src/lerobot_policy_vla_jepa_lfm/__init__.py": "8cab57202a1067e2a07100d0842d91e00292d0bafd9faadd339ba4be08fb5a8e",
+        "src/lerobot_policy_vla_jepa_lfm/configuration_vla_jepa_lfm.py": "1a90ac1ff0e1c17fbea687470de4c9e9fc44184175fcbd87f68eb3f4ad4f7f4f",
+        "src/lerobot_policy_vla_jepa_lfm/context_adapter.py": "8fa73d23a5c19fe273baf7237a2b81d55b05027b8394555547891d60df0845b1",
+        "src/lerobot_policy_vla_jepa_lfm/lfm_interface.py": "dd9f05d089c1751df8d1441b155d439f122a82006b5ec8630001a5470f76048e",
+        "src/lerobot_policy_vla_jepa_lfm/modeling_vla_jepa_lfm.py": "7ec356a0adab6defd2bbb15c2dfc1f3ba2b18b31ce8b41c498a9375f4c163ff3",
+        "src/lerobot_policy_vla_jepa_lfm/processor_vla_jepa_lfm.py": "fe6a4c0e48425923f18c8dc4f632ce5a7ea7184739c56be5e80bcba3166678ac",
+        "tests/test_contract.py": "52cd5e07cb098fe5fd1a407b6ebc6e5dd2446af9a739ca97a3177926f48fd26e",
+        "uv.lock": "26b02dd4c50ee7c633c579b05fb954fbff5103faa047080d6d8f8e7bed7ee3ee"
+      }
+    }
+  ],
+  "protocol": "dream-rsi-v1",
+  "real_attempts": 8,
+  "schema_version": 1,
+  "selected_policies": [
+    {
+      "mean_score": -0.30610000000000004,
+      "outer": 0,
+      "selected": "p0_1"
+    },
+    {
+      "mean_score": -0.3118,
+      "outer": 1,
+      "selected": "p1_1"
+    }
+  ]
+}

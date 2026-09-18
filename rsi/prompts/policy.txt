@@ -4,9 +4,22 @@ Observation has nodes (id,parent,score,status,summary), leaves, round, limit.
 None means STOP. Code must be pure deterministic Python, with seeded RNG allowed.
 Only random and math imports are allowed. No filesystem, introspection, subprocess,
 network, external state, evaluator edits, discovery changes, or budget changes.
-Optimize mean(max revealed quality - beta1 * revealed nonroot count). W=1.
+W=1.
 Replay starts at root; choosing root reveals the earliest unrevealed root child;
 choosing a leaf reveals its unique recorded child, or stops on missing continuation.
 Never assume unavailable future outcomes. Improve from the supplied fixed history
 and feedback for the current revision. Exactly 25 common history/seed worlds are
 used per version, 4 slots including incumbent, for 100 trajectories per cycle.
+
+V2 observation also includes stop_allowed, root_branches, distinct_families,
+root_open_target, and protocol_minima. Nodes contain compact mechanism metadata;
+family_id is inherited by refinements, so relabeling does not create a family.
+STOP is forbidden until at least 6 accepted nonroot nodes, 4 root branches and
+4 distinct families are revealed. The same deterministic online/replay constraint
+replaces an early STOP with root until root/family floors are met, then the
+highest-scoring eligible leaf (root if none). Constrained actions are reported.
+Target 5 independent roots before refinement. After coverage, refine promising
+leaves and stop only on evidence of saturation.
+Optimize mean(best revealed quality - beta1 * revealed nonroot count
++ beta_diversity * distinct revealed mechanism families), with beta1=0.0025
+and beta_diversity=0.001. Coverage and fixed budgets cannot be changed by policy.

@@ -116,14 +116,69 @@ def candidate_guard(workspace, before):
     return after
 
 
-def observation(nodes, limit):
+def eligible_nodes(nodes):
+    return [n for n in nodes[1:] if n.get("eligible", n.get("status") == "ok")]
+
+
+def mechanism_families(nodes):
+    return {
+        n.get("family_id")
+        or n.get("mechanism_family")
+        or (n.get("proposal") or {}).get("mechanism_family")
+        for n in eligible_nodes(nodes)
+    } - {None, ""}
+
+
+def observation(nodes, limit, protocol=None):
+    protocol = protocol or {}
     parents = {n["parent"] for n in nodes[1:]}
+    minima = {
+        k: protocol.get(k, 0)
+        for k in (
+            "min_nodes_before_stop",
+            "min_root_branches_before_stop",
+            "min_distinct_families_before_stop",
+        )
+    }
+    eligible = eligible_nodes(nodes)
+    roots = sum(n["parent"] == "root" for n in eligible)
+    families = len(mechanism_families(nodes))
+    measured = len(eligible)
     return {
         "nodes": json.loads(json.dumps(nodes)),
-        "leaves": [n["id"] for n in nodes[1:] if n["id"] not in parents],
+        "leaves": [
+            n["id"]
+            for n in nodes[1:]
+            if n["id"] not in parents and n.get("eligible", n.get("status") == "ok")
+        ],
         "round": len(nodes) - 1,
         "limit": limit,
+        "root_branches": roots,
+        "distinct_families": families,
+        "measured_nodes": measured,
+        "protocol_minima": minima,
+        "root_open_target": protocol.get("root_open_target", 3),
+        "stop_allowed": (
+            measured >= minima["min_nodes_before_stop"]
+            and roots >= minima["min_root_branches_before_stop"]
+            and families >= minima["min_distinct_families_before_stop"]
+        ),
     }
+
+
+def constrain_action(action, obs):
+    validate_action(action, obs)
+    if action is not None or obs["stop_allowed"]:
+        return action, False
+    minima = obs["protocol_minima"]
+    if (
+        obs["root_branches"] < minima["min_root_branches_before_stop"]
+        or obs["distinct_families"] < minima["min_distinct_families_before_stop"]
+    ):
+        return "root", True
+    leaves = [n for n in obs["nodes"] if n["id"] in obs["leaves"]]
+    best = max(leaves, key=lambda n: (n["score"], n["id"]), default=None)
+    return best["id"] if best else "root", True
 
 
 def validate_action(action, obs):
@@ -146,18 +201,20 @@ def validate_tree(nodes):
         parents.add(node["parent"])
 
 
-def replay(nodes, select, seed, limit, beta1, failure_score):
+def replay(nodes, select, seed, limit, beta1, failure_score, beta_diversity=0.0, protocol=None):
     validate_tree(nodes)
     revealed = [nodes[0]]
     trace = []
     reason = "K2"
+    constrained_actions = 0
     for turn in range(limit):
         if len(revealed) == len(nodes):
             reason = "full_tree"
             break
-        obs = observation(revealed, limit)
+        obs = observation(revealed, limit, protocol)
         action = select(obs, seed + turn)
-        validate_action(action, obs)
+        action, constrained = constrain_action(action, obs)
+        constrained_actions += int(constrained)
         if action is None:
             reason = "STOP"
             break
@@ -171,6 +228,7 @@ def replay(nodes, select, seed, limit, beta1, failure_score):
                 "visible_before": [n["id"] for n in revealed],
                 "action": action,
                 "revealed": child["id"],
+                "constrained": constrained,
             }
         )
         revealed.append(child)
@@ -178,7 +236,11 @@ def replay(nodes, select, seed, limit, beta1, failure_score):
         (n["score"] for n in revealed if n.get("score") is not None), default=failure_score
     )
     return {
-        "objective": quality - beta1 * (len(revealed) - 1),
+        "objective": quality
+        - beta1 * (len(revealed) - 1)
+        + beta_diversity * len(mechanism_families(revealed)),
+        "unique_families": len(mechanism_families(revealed)),
+        "constrained_actions": constrained_actions,
         "revealed": len(revealed) - 1,
         "trace": trace,
         "reason": reason,

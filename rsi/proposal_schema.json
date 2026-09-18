@@ -1,0 +1,102 @@
+{
+  "type": "object",
+  "properties": {
+    "hypothesis": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "mechanism_family": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "structural_change": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "why_not_parameter_only": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "expected_effect": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "limitations": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1600
+    },
+    "architecture_axes": {
+      "type": "object",
+      "properties": {
+        "representation_source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "information_flow": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "adaptation_location": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "conditioning_target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "trainability": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "representation_source",
+        "information_flow",
+        "adaptation_location",
+        "conditioning_target",
+        "trainability"
+      ],
+      "additionalProperties": false
+    },
+    "relation_to_parent": {
+      "type": "string",
+      "enum": [
+        "new_family",
+        "structural_refinement"
+      ]
+    },
+    "implementation_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "minItems": 1,
+      "maxItems": 12
+    }
+  },
+  "required": [
+    "hypothesis",
+    "mechanism_family",
+    "structural_change",
+    "why_not_parameter_only",
+    "expected_effect",
+    "limitations",
+    "architecture_axes",
+    "relation_to_parent",
+    "implementation_checks"
+  ],
+  "additionalProperties": false
+}

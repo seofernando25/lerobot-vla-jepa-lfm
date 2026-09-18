@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -18,13 +19,23 @@ from rsi.core import (
     Journal,
     atomic,
     candidate_guard,
+    constrain_action,
     digest,
     manifest,
+    mechanism_families,
     observation,
     replay,
-    validate_action,
 )
 from rsi.evaluator import parse_metric, train_args
+from rsi.novelty import (
+    AXES,
+    architecture_delta,
+    axes_signature,
+    check_novelty,
+    compact_node,
+    normalize,
+    parse_proposal,
+)
 from rsi.policy import Policy
 from rsi.process import codex_argv, isolated, run_logged
 
@@ -43,7 +54,17 @@ def now():
 
 def load_config(path):
     c = json.loads(Path(path).read_text())
+    if c.get("protocol_version") != "dream-rsi-v2":
+        raise ValueError("v2 requires a fresh dream-rsi-v2 study; v1 state cannot be reused")
     for key in (
+        "max_proposal_retries",
+        "root_open_target",
+        "min_nodes_before_stop",
+        "min_root_branches_before_stop",
+        "min_distinct_families_before_stop",
+        "min_outer_iterations_before_stop",
+        "min_total_measured_nodes_before_stop",
+        "min_refinement_arch_delta",
         "probe_steps",
         "K1",
         "K2",
@@ -61,7 +82,21 @@ def load_config(path):
         raise ValueError("fixed contract requires W=1, four version slots, 100 trajectories")
     if c["precision"] != "bf16" or not 0 < c["dataset"]["eval_split"] < 1:
         raise ValueError("invalid precision or held-out split")
-    if c["beta1"] < 0 or c["failure_score"] >= 0:
+    if c["probe_steps"] != 500:
+        raise ValueError("fixed probe budget is 500 steps")
+    if not 0 <= c["max_root_arch_similarity"] <= 1:
+        raise ValueError("invalid root similarity threshold")
+    if (
+        c["min_nodes_before_stop"] > min(c["K1"], c["K2"])
+        or c["min_root_branches_before_stop"] > c["root_open_target"]
+        or c["root_open_target"] > c["K1"]
+        or c["min_outer_iterations_before_stop"] > c["max_outer_iterations"]
+        or c["min_total_measured_nodes_before_stop"] > c["max_real_attempts"]
+    ):
+        raise ValueError("inconsistent coverage floors")
+    if c["novelty_reference"] != "rsi/studies/v1_novelty_reference.json":
+        raise ValueError("novelty reference must be the tracked trusted reference")
+    if c["beta1"] < 0 or c["beta_diversity"] < 0 or c["failure_score"] >= 0:
         raise ValueError("invalid objective constants")
     return c
 
@@ -89,6 +124,7 @@ def source_contract(repo, target):
         shutil.copyfile(repo / "uv.lock", target / "uv.lock")
     (target / "tests").mkdir()
     shutil.copyfile(repo / "rsi/contract_test.py", target / "tests/test_contract.py")
+    shutil.copyfile(repo / "rsi/proposal_schema.json", target / "proposal_schema.json")
     candidate_guard(target, manifest(target))
 
 
@@ -174,7 +210,9 @@ class Runner:
 
     def tree(self, outer):
         return [self.root_node()] + [
-            e["node"] for e in self.events("outcome") if e["outer"] == outer
+            e["node"]
+            for e in self.events("outcome")
+            if e["outer"] == outer and e["node"].get("proposal")
         ]
 
     def ensure_baseline(self):
@@ -251,9 +289,34 @@ class Runner:
         finished = {e["attempt"] for e in self.events("outcome")}
         for event in self.events("attempt"):
             if event["attempt"] not in finished:
-                self.finish(event, "interrupted", "Reserved attempt interrupted; never relaunched.")
+                accepted = next(
+                    (
+                        e
+                        for e in self.events("proposal_accepted")
+                        if e["attempt"] == event["attempt"]
+                    ),
+                    {},
+                )
+                self.finish(
+                    event,
+                    "interrupted",
+                    "Reserved attempt interrupted; never relaunched.",
+                    proposal=accepted.get("proposal"),
+                    delta=accepted.get("architecture_delta"),
+                    family_id=accepted.get("family_id"),
+                )
 
-    def finish(self, event, status, summary, metrics=None, workspace_hash=None):
+    def finish(
+        self,
+        event,
+        status,
+        summary,
+        metrics=None,
+        workspace_hash=None,
+        proposal=None,
+        delta=None,
+        family_id=None,
+    ):
         metrics = metrics or {}
         node = {
             "id": event["attempt"],
@@ -262,6 +325,12 @@ class Runner:
             "score": metrics.get("score", self.config["failure_score"]),
             "summary": summary,
             "metrics": metrics,
+            "outer": event["outer"],
+            "proposal": proposal,
+            "architecture_delta": sorted(delta or []),
+            "axes_signature": axes_signature(proposal["architecture_axes"]) if proposal else None,
+            "family_id": family_id,
+            "eligible": status == "ok" and workspace_hash is not None,
         }
         self.journal.append(
             "outcome",
@@ -271,6 +340,87 @@ class Runner:
             workspace_hash=workspace_hash,
             ended_at=now(),
         )
+
+    def ledger(self):
+        return [
+            compact_node(e["node"]) for e in self.events("outcome") if e["node"].get("proposal")
+        ]
+
+    def root_references(self):
+        reference = json.loads((self.repo / self.config["novelty_reference"]).read_text())
+        if reference["fingerprint_version"] != 1:
+            raise ValueError("unsupported novelty fingerprint version")
+        return reference["roots"] + [
+            e for e in self.events("proposal_accepted") if e["parent"] == "root"
+        ]
+
+    def discovery_prompt(self, outer, parent, feedback):
+        # Never serialize config wholesale: it includes the private novelty-reference path.
+        fixed = {
+            k: self.config[k]
+            for k in ("probe_steps", "seed", "batch_size", "precision", "max_eval_samples")
+        }
+        return (self.repo / "rsi/prompts/discovery.txt").read_text() + json.dumps(
+            {
+                "selected_parent": parent,
+                "global_history": self.ledger(),
+                "current_tree": [compact_node(n) for n in self.tree(outer)],
+                "fixed_probe": fixed,
+                "rejection_feedback": feedback,
+            },
+            separators=(",", ":"),
+        )
+
+    def discover(self, outer, parent, identifier, retry, workspace, directory, feedback):
+        if self.synthetic:
+            # Exercise real schema, guard and novelty paths without a model or subprocess.
+            label = identifier + "_" + str(retry)
+            (workspace / PLUGIN / (label + ".py")).write_text(
+                f"class Synthetic_{label}:\n"
+                "    def encode(self, x): return self.route(self.project(x))\n"
+                "    def project(self, x): return x\n"
+                "    def route(self, x): return x\n"
+            )
+            return parse_proposal(
+                json.dumps(
+                    {
+                        "hypothesis": "Synthetic hypothesis " + label,
+                        "mechanism_family": "synthetic " + identifier,
+                        "architecture_axes": dict.fromkeys(AXES, label),
+                        "relation_to_parent": "new_family"
+                        if parent == "root"
+                        else "structural_refinement",
+                        "structural_change": "Synthetic module " + label,
+                        "why_not_parameter_only": "Adds structural definitions and call edges",
+                        "expected_effect": "No scientific interpretation",
+                        "implementation_checks": ["Synthetic syntax only"],
+                        "limitations": "No training or discovery performed",
+                    }
+                )
+            )
+        prompt = self.discovery_prompt(outer, parent, feedback)
+        (directory / "prompt.txt").write_text(prompt)
+        args = codex_argv()
+        args[-1:-1] = [
+            "--output-schema",
+            "/tmp/work/proposal_schema.json",
+            "-o",
+            "/tmp/work/.proposal.json",
+        ]
+        run_logged(
+            isolated(args, self.repo, workspace),
+            self.repo,
+            directory / "discovery",
+            self.config["agent_timeout_seconds"],
+            self.stop,
+            prompt,
+        )
+        output = workspace / ".proposal.json"
+        if not output.is_file() or output.is_symlink():
+            raise ValueError("discovery did not emit a regular proposal JSON file")
+        text = output.read_text()
+        output.unlink()
+        return parse_proposal(text)
 
     def attempt(self, outer, parent):
         identifier = f"n{len(self.events('attempt')) + 1:04d}"
@@ -288,15 +438,84 @@ class Runner:
         directory.mkdir(parents=True)
         workspace = directory / "workspace"
         start = time.monotonic()
+        proposal, delta, family_id, accepted = None, None, None, None
         try:
+            parent_workspace = self.workspace(outer, parent)
+            parent_node = None
             if parent != "root":
                 parent_event = next(e for e in self.events("outcome") if e["attempt"] == parent)
-                if parent_event["workspace_hash"] is None:
-                    raise ValueError("parent has no accepted saved workspace; select root instead")
-                if manifest(self.workspace(outer, parent)) != parent_event["workspace_hash"]:
-                    raise ValueError("parent workspace modified")
-            shutil.copytree(self.workspace(outer, parent), workspace)
-            before = manifest(workspace)
+                parent_node = parent_event["node"]
+                if (
+                    not parent_node["eligible"]
+                    or manifest(parent_workspace) != parent_event["workspace_hash"]
+                ):
+                    raise ValueError("parent has no intact eligible workspace")
+            feedback = []
+            # max_proposal_retries is the maximum number of fresh proposal sessions per reservation.
+            for retry in range(1, self.config["max_proposal_retries"] + 1):
+                if self.stop.exists():
+                    raise InterruptedError("stop requested")
+                if workspace.exists():
+                    shutil.rmtree(workspace)
+                shutil.copytree(parent_workspace, workspace)
+                before = manifest(workspace)
+                session = directory / f"proposal_{retry}"
+                session.mkdir()
+                self.journal.append("proposal_session", attempt=identifier, retry=retry, at=now())
+                proposed = None
+                try:
+                    proposed = self.discover(
+                        outer, parent, identifier, retry, workspace, session, feedback
+                    )
+                    accepted = candidate_guard(workspace, before)
+                    delta = architecture_delta(parent_workspace, workspace)
+                    check_novelty(proposed, delta, parent, self.root_references(), self.config)
+                except InterruptedError:
+                    raise
+                except Exception as exc:  # noqa: BLE001 - untrusted proposal boundary
+                    reason = str(exc)
+                    metadata = {
+                        k: proposed[k]
+                        for k in ("mechanism_family", "architecture_axes", "structural_change")
+                        if proposed and k in proposed
+                    }
+                    self.journal.append(
+                        "proposal_rejected",
+                        attempt=identifier,
+                        retry=retry,
+                        reason=reason,
+                        mechanism=metadata,
+                        at=now(),
+                    )
+                    feedback.append(
+                        {
+                            "retry": retry,
+                            "reason": reason,
+                            "rejected_mechanism": metadata,
+                        }
+                    )
+                    continue
+                proposal = proposed
+                family_id = (
+                    normalize(proposal["mechanism_family"])
+                    if parent == "root"
+                    else parent_node["family_id"]
+                )
+                self.journal.append(
+                    "proposal_accepted",
+                    attempt=identifier,
+                    outer=outer,
+                    parent=parent,
+                    proposal=proposal,
+                    architecture_delta=sorted(delta),
+                    family_id=family_id,
+                    axes_signature=axes_signature(proposal["architecture_axes"]),
+                    at=now(),
+                )
+                break
+            if proposal is None:
+                self.finish(event, "proposal_failure", "All proposal sessions rejected; no probe.")
+                return
             if self.synthetic:
                 metrics = {
                     "score": -1.0 / (1 + int(identifier[1:])),
@@ -305,52 +524,23 @@ class Runner:
                     "wall_seconds": 0.0,
                     "metric_provenance": "synthetic; no training",
                 }
-                summary = "Synthetic architecture result, never a scientific measurement."
             else:
-                prompt = (self.repo / "rsi/prompts/discovery.txt").read_text()
-                prompt += json.dumps(
-                    {
-                        "selected_parent": parent,
-                        "observed_nodes": self.tree(outer),
-                        "fixed_probe": self.config,
-                    },
-                    indent=2,
-                )
-                (directory / "prompt.txt").write_text(prompt)
-                discovery_args = codex_argv()
-                discovery_args[-1:-1] = ["-o", "/tmp/work/.discovery_summary"]
-                argv = isolated(discovery_args, self.repo, workspace)
-                run_logged(
-                    argv,
-                    self.repo,
-                    directory / "discovery",
-                    self.config["agent_timeout_seconds"],
-                    self.stop,
-                    prompt,
-                )
-                summary_path = workspace / ".discovery_summary"
-                if not summary_path.is_file():
-                    raise ValueError("discovery agent did not emit a final summary")
-                summary = summary_path.read_text()[-8000:]
-                summary_path.unlink()
-                candidate_guard(workspace, before)
                 output = directory / "evaluation"
                 output.mkdir()
-                metrics = self.evaluate_workspace(
-                    workspace,
-                    output,
-                    directory / "probe",
-                )
-            accepted = candidate_guard(workspace, before)
+                metrics = self.evaluate_workspace(workspace, output, directory / "probe")
             metrics["attempt_wall_seconds"] = time.monotonic() - start
             atomic(directory / "metrics.json", metrics)
-            self.finish(event, "ok", summary, metrics, accepted)
+            summary = proposal["mechanism_family"] + ": " + proposal["structural_change"]
+            self.finish(event, "ok", summary, metrics, accepted, proposal, delta, family_id)
         except Exception as exc:  # noqa: BLE001 - external candidate failure boundary
             self.finish(
                 event,
                 "implementation_failure",
                 str(exc),
                 {"attempt_wall_seconds": time.monotonic() - start},
+                proposal=proposal,
+                delta=delta,
+                family_id=family_id,
             )
             if isinstance(exc, InterruptedError):
                 self.stop.touch()
@@ -358,7 +548,9 @@ class Runner:
     def improve(self, outer, incumbent):
         cycles = [e for e in self.events("cycle") if e["outer"] == outer]
         if not cycles:
-            history = [self.tree(e["outer"]) for e in self.events("online_done")]
+            history = [
+                [compact_node(n) for n in self.tree(e["outer"])] for e in self.events("online_done")
+            ]
             self.journal.append(
                 "cycle",
                 outer=outer,
@@ -396,7 +588,8 @@ class Runner:
                             prompt += json.dumps(
                                 {
                                     "history": history,
-                                    "feedback": slots,
+                                    "feedback": [policy_feedback(v) for v in slots],
+                                    "protocol": self.config,
                                     "beta1": self.config["beta1"],
                                 }
                             )
@@ -409,9 +602,9 @@ class Runner:
                                 prompt,
                             )
                         else:
-                            # Different valid branch-opening schedules in fake worlds.
+                            # Different root-opening schedules on the same synthetic worlds.
                             text = path.read_text().replace(
-                                "len(nodes) < 4", f"len(nodes) < {slot + 1}"
+                                'observation["root_open_target"]', str(slot + 3)
                             )
                             path.write_text(text)
                         if set(manifest(work)) != {"policy.py"}:
@@ -435,6 +628,8 @@ class Runner:
                         self.config["K2"],
                         self.config["beta1"],
                         self.config["failure_score"],
+                        self.config["beta_diversity"],
+                        self.config,
                     )
                 except Exception as exc:  # noqa: BLE001 - external candidate failure boundary
                     result = {
@@ -442,6 +637,8 @@ class Runner:
                         "error": str(exc),
                         "trace": [],
                         "revealed": 0,
+                        "unique_families": 0,
+                        "constrained_actions": 0,
                         "reason": "invalid_policy",
                     }
                 trajectories.append(dict(result, history=tree_index, seed=seed))
@@ -471,6 +668,16 @@ class Runner:
         )
         return best["policy"]
 
+    def accepted_measured_count(self):
+        return sum(e["node"]["status"] == "ok" for e in self.events("outcome"))
+
+    def global_stop_allowed(self, outer):
+        return (
+            outer + 1 >= self.config["min_outer_iterations_before_stop"]
+            and self.accepted_measured_count()
+            >= self.config["min_total_measured_nodes_before_stop"]
+        )
+
     def run(self, resume=False):
         self.verify()
         if self.events("finished"):
@@ -489,10 +696,11 @@ class Runner:
                 return
             if any(e["outer"] == outer for e in self.events("cycle_done")):
                 done = next(e for e in self.events("online_done") if e["outer"] == outer)
-                if done["reason"] == "policy_STOP" or (
-                    len(self.events("attempt")) >= self.config["max_real_attempts"]
-                ):
-                    self.journal.append("finished", reason=done["reason"], at=now())
+                if len(self.events("attempt")) >= self.config["max_real_attempts"]:
+                    self.journal.append("finished", reason="global_attempt_cap", at=now())
+                    return
+                if done["reason"] == "policy_STOP" and self.global_stop_allowed(outer):
+                    self.journal.append("finished", reason="policy_STOP", at=now())
                     return
                 continue
             previous = self.events("cycle_done")
@@ -506,16 +714,26 @@ class Runner:
             completed = [e for e in self.events("online_done") if e["outer"] == outer]
             reason = completed[0]["reason"] if completed else "K1"
             if not completed:
-                while len(self.tree(outer)) - 1 < self.config["K1"]:
+                while sum(e["outer"] == outer for e in self.events("attempt")) < self.config["K1"]:
                     if self.stop.exists():
                         return
                     if len(self.events("attempt")) >= self.config["max_real_attempts"]:
                         reason = "global_attempt_cap"
                         break
                     nodes = self.tree(outer)
-                    obs = observation(nodes, self.config["K1"])
+                    obs = observation(
+                        [compact_node(n) for n in nodes], self.config["K1"], self.config
+                    )
                     action = policy(obs, self.config["seed"] + outer * 1009 + obs["round"])
-                    validate_action(action, obs)
+                    action, constrained = constrain_action(action, obs)
+                    if constrained:
+                        self.journal.append(
+                            "action_constrained",
+                            outer=outer,
+                            requested=None,
+                            action=action,
+                            at=now(),
+                        )
                     if action is None:
                         reason = "policy_STOP"
                         break
@@ -526,13 +744,21 @@ class Runner:
             selected = self.improve(outer, current)
             if selected is None:
                 return
-            if (
-                reason == "policy_STOP"
-                or len(self.events("attempt")) >= self.config["max_real_attempts"]
-            ):
-                reason = "policy_STOP" if reason == "policy_STOP" else "global_attempt_cap"
-                self.journal.append("finished", reason=reason, at=now())
+            if len(self.events("attempt")) >= self.config["max_real_attempts"]:
+                self.journal.append("finished", reason="global_attempt_cap", at=now())
                 return
+            if reason == "policy_STOP":
+                if self.global_stop_allowed(outer):
+                    self.journal.append("finished", reason="policy_STOP", at=now())
+                    return
+                self.journal.append(
+                    "stop_deferred",
+                    outer=outer,
+                    measured=self.accepted_measured_count(),
+                    required_outer_iterations=self.config["min_outer_iterations_before_stop"],
+                    required_measured=self.config["min_total_measured_nodes_before_stop"],
+                    at=now(),
+                )
         self.journal.append("finished", reason="global_outer_cap", at=now())
 
     def status(self):
@@ -542,6 +768,17 @@ class Runner:
             "synthetic": self.synthetic,
             "attempts_reserved": len(self.events("attempt")),
             "outcomes": len(self.events("outcome")),
+            "proposal_sessions": len(self.events("proposal_session")),
+            "proposal_rejections": len(self.events("proposal_rejected")),
+            "accepted_measured_nodes": self.accepted_measured_count(),
+            "distinct_families": len(
+                mechanism_families(
+                    [
+                        ROOT,
+                        *[e["node"] for e in self.events("outcome") if e["node"].get("proposal")],
+                    ]
+                )
+            ),
             "completed_cycles": len(self.events("cycle_done")),
             "replay_trajectories": sum(e["trajectories"] for e in self.events("cycle_done")),
             "stop_requested": self.stop.exists(),
@@ -549,11 +786,29 @@ class Runner:
         }
 
 
+def policy_feedback(version):
+    trajectories = version["trajectories"]
+    count = len(trajectories)
+    return {
+        "policy": version["policy"],
+        "slot": version["slot"],
+        "mean_objective": version["mean_score"],
+        "mean_revealed": sum(t["revealed"] for t in trajectories) / count,
+        "mean_unique_families": sum(t["unique_families"] for t in trajectories) / count,
+        "reason_counts": dict(Counter(t["reason"] for t in trajectories)),
+        "constrained_actions": sum(t["constrained_actions"] for t in trajectories),
+        "representative_traces": [t["trace"] for t in trajectories[:2]],
+    }
+
+
 def dry_run(repo):
     with tempfile.TemporaryDirectory(prefix="rsi-synthetic-") as tmp:
         runner = Runner(repo, Path(tmp), synthetic=True)
         config = json.loads((Path(repo) / "rsi/config.json").read_text())
+        # Keep dry-run intentionally one-cycle while preserving real v2 floors.
         config["max_outer_iterations"] = 1
+        config["min_outer_iterations_before_stop"] = 1
+        config["min_total_measured_nodes_before_stop"] = 1
         path = Path(tmp) / "input.json"
         atomic(path, config)
         with lock(runner.state):

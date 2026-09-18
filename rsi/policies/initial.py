@@ -1,4 +1,4 @@
-"""W=1 parallel-refining approximation. Only revealed observations are available."""
+"""Open diverse roots, then refine measured leaves under protocol coverage floors."""
 
 import random
 
@@ -8,13 +8,13 @@ def select(observation, seed):
     nodes = observation["nodes"]
     if observation["round"] >= observation["limit"]:
         return None
-    if len(nodes) < 4:  # Three independent initial branches.
+    if observation["root_branches"] < observation["root_open_target"]:
         return "root"
     successful = [n for n in nodes[1:] if n["status"] == "ok"]
     if not successful:
-        return None
+        return None if observation["stop_allowed"] else "root"
     # Stop after three successive attempts without a measured improvement.
-    if len(nodes) >= 7:
+    if observation["stop_allowed"] and len(nodes) >= 7:
         earlier = max(n["score"] for n in nodes[1:-3])
         if max(n["score"] for n in nodes[-3:]) <= earlier:
             return None

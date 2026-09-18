@@ -16,11 +16,15 @@ The harness rejects changes to LeRobot, preprocessing, normalization, data split
 
 ## Dream-RSI loop
 
-1. **Online explore.** A frozen exploration-policy program selects the root or a currently revealed leaf. One fresh ephemeral `gpt-6-astra` / low-reasoning Codex call proposes one architecture from that parent's isolated source snapshot.
+1. **Online explore.** A frozen exploration-policy program selects the root or a currently revealed leaf. Fresh ephemeral `gpt-6-astra` / low-reasoning Codex sessions propose structured architectures from that parent's isolated source snapshot (at most three sessions per attempt, resetting source after each rejection).
 2. **Fixed real probe.** The clean base is measured once; every accepted node then trains for exactly 500 optimizer steps on the same local LIBERO-Spatial protocol and receives `score = -held_out_eval_loss`.
 3. **Replay world.** Completed trees are replayed prefix-causally. Selecting root reveals the earliest recorded unopened branch; selecting a leaf reveals only its recorded child.
 4. **Dream.** Four exploration-policy versions (incumbent + up to three revisions) are evaluated on the same history/seed worlds, 25 trajectories each = **100 dream trajectories per cycle**.
 5. **Redeploy.** The best replay-scoring policy controls the next new online tree.
+
+Protocol **dream-rsi-v2** adds AST structural novelty screening and a global accepted-mechanism ledger across fresh outer trees. Roots must be distinct from prior v2 roots and a trusted, score-free v1 reference; parameter-only changes are rejected before evaluation. The initial policy targets five roots. Per-tree STOP requires six accepted nodes, four root branches and four distinct mechanism families; a STOP cannot end the study before two online/dream cycles and 12 measured nodes. Replay uses `best quality - 0.0025 * revealed nonroot nodes + 0.001 * distinct families`; these coverage floors, weaker cost penalty and novelty bonus deliberately extend Dream-RSI.
+
+V1 is preserved by tag `rsi-v1-complete`, the sealed local archive, and [tracked summary](rsi/studies/v1_summary.json). Neither v1 results nor novelty references are visible to discovery workers. V2 requires fresh state; never reuse or modify the sealed archive.
 
 Runtime state is append-only under ignored `.rsi/`. Prior experiment records were removed from `main` to avoid discovery bias and remain recoverable at tag `pre-dream-rsi`.
 
@@ -55,7 +59,7 @@ uv run python -m rsi status
 uv run python -m rsi stop
 ```
 
-Defaults: one RTX 3090 worker, one matched 500-step base measurement, 500 steps/probe, up to 6 real probes per online tree, up to 3 online/dream cycles, hard cap 18 real probes, deterministic 10% per-task held-out split, and 64 held-out evaluation samples.
+Defaults: one RTX 3090 worker, one matched 500-step base measurement, 500 steps/probe, up to 8 attempt reservations per online tree, up to 3 online/dream cycles, hard cap 24 attempts, deterministic 10% per-task held-out split, and 64 held-out evaluation samples.
 
 ## Confirmation
 

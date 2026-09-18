@@ -115,7 +115,8 @@ def test_workspace_allowlist_and_guards(tmp_path):
     before = manifest(workspace)
     assert not any(Path(n).name in {"README.md", "AGENTS.md", ".git"} for n in before)
     assert all(
-        n.startswith("src/") or n in {"pyproject.toml", "uv.lock", "tests/test_contract.py"}
+        n.startswith("src/")
+        or n in {"pyproject.toml", "uv.lock", "tests/test_contract.py", "proposal_schema.json"}
         for n in before
     )
     new = workspace / "src/lerobot_policy_vla_jepa_lfm/new_arch.py"
@@ -172,7 +173,13 @@ def test_fixed_codex_and_evaluator_contract():
 
 
 def make_runner(tmp_path, **overrides):
-    config = dict(CONFIG, max_outer_iterations=1, **overrides)
+    config = dict(
+        CONFIG,
+        max_outer_iterations=1,
+        min_outer_iterations_before_stop=1,
+        min_total_measured_nodes_before_stop=1,
+        **overrides,
+    )
     path = tmp_path / "input.json"
     atomic(path, config)
     runner = Runner(REPO, tmp_path / "state", synthetic=True)
@@ -250,7 +257,7 @@ def test_synthetic_end_to_end_never_invokes_codex_or_gpu(monkeypatch):
     monkeypatch.setattr("rsi.runner.run_logged", forbidden)
     result = dry_run(REPO)
     assert result["replay_trajectories"] == 100
-    assert result["attempts_reserved"] == 6
+    assert result["attempts_reserved"] == 8
 
 
 def test_isolation_command_hides_repo(tmp_path):

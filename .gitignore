@@ -31,3 +31,5 @@ experiments/**/videos/
 
 # Dream-RSI runtime state (workspaces, checkpoints, logs, replay events)
 .rsi/
+.rsi-v1*/
+.rsi-archive*/

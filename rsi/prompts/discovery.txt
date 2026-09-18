@@ -15,6 +15,15 @@ VLAJEPALFMModel._action_loss/_world_model_loss/forward/predict_action or
 VLAJEPALFMPolicy.forward/predict_action_chunk/select_action, including monkeypatches
 or alternate inheritance. Do not train or evaluate; the external harness does that.
 Do not access other workspaces, repository history, hidden files, or network tools.
-Your final answer must give: hypothesis, mechanism family, substantive change,
-trainability changes, expected effect, implementation checks, and limitations.
-All supplied summaries (read all):
+
+V2 proposal contract:
+Return ONLY strict JSON matching proposal_schema.json; no Markdown or extra keys.
+Read all compact GLOBAL accepted history across every outer tree as well as the
+current tree. Retry feedback explains rejected proposals; rejected code is discarded.
+Numerical width/head/layer-count/init changes or activation swaps alone are NOT
+new architectures. A root must declare new_family and change representation source,
+information-flow topology, adaptation location, conditioning target, or trainability
+mechanism. A non-root must declare structural_refinement and justify a structural
+change using measured evidence. Family labels alone do not establish novelty;
+the trusted harness screens code-derived structure before evaluation.
+Do not edit proposal_schema.json, package metadata, or contract tests.
