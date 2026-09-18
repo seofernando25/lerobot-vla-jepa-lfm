@@ -46,3 +46,48 @@ Do not narrow the search to known prior adapters in instructions. Measured evalu
 ## Hygiene
 
 Never commit `.rsi/`, weights, datasets, checkpoints, videos, caches, credentials, virtualenvs, or machine-specific paths. Keep model/data caches outside tracked source.
+
+## V3 logical batches and shared resources
+
+`dream-rsi-v3-batched` uses physical evaluator **W=1** and logical proposal
+batch **B=4**, with four fresh ephemeral Astra-Low implementation sessions in a
+ThreadPoolExecutor. This is a single-evaluator adaptation of Dream-RSI parallel
+exploration, not equivalent to physical W=4. Each slot sees the same frozen
+pre-batch global/current history; it never sees sibling proposal content or scores.
+Trusted retry rounds reset each rejected workspace from its unchanged parent.
+Root collisions within a batch receive generic feedback only. Main-thread journal
+records are ordered by round and slot. All proposals resolve before any GPU probe;
+accepted candidates are evaluated sequentially by slot. All reserved outcomes and
+`batch_done` must exist before the next policy/proposal batch begins. K1=8 normally
+means two logical batches. Interrupted batches are closed without repeating any
+possibly executed external work.
+
+Online and replay share `plan_batch_actions`. Policy retains its single-action
+interface and receives `batch_slot`, `batch_size`, and `planned_actions` in addition
+to the unchanged measured prefix. Planned choices earn no STOP coverage. Root may
+repeat; a non-root parent may appear once. Replay reveals selected recorded
+children together after planning, preserving root creation order and never using
+future scores. Four policy slots share 25 worlds: exactly 100 dreams per cycle.
+
+Candidate workspaces contain only plugin Python source, minimal metadata/lock,
+contract tests and schema. They exclude .venv, models, caches, datasets, checkpoints,
+archives, studies, README, board and Git history. Dependencies use the repository's
+shared .venv read-only; model weights use the machine's shared HF cache read-only.
+The evaluator binds RSI_DATASET_ROOT read-only. There are no per-candidate
+environments or model copies. uv uses its normal shared cache when maintaining
+the repository environment; probe execution does not run uv or install packages.
+Search baseline/probes pass `--save_checkpoint=false`; a post-probe guard fails
+without deleting unexpected safetensors, pt/pth or DCP shards. Only confirmation
+training explicitly saves checkpoints for final LIBERO evaluation. The harness
+checks `shutil.disk_usage(state).free` against `min_free_disk_gib=20` before every
+batch/evaluation and stops cleanly below the threshold.
+
+Fresh initialization may use `python -m rsi init --prior-study <completed-state>`
+to import compact accepted v2/v3 mechanism history and score-free root novelty
+references into the trusted journal. The source study must be completed. No
+archive, result directory, weights or full source is copied into a candidate.
+Without this option the study starts with the tracked v1 novelty reference and
+its own global v3 history. Do not initialize from or modify live v2 state. Harness
+construction and `dry-run` require no real study, Codex discovery or GPU training.
+
+Search probes log every 50 optimizer steps; the harness parses loss, action/world-model loss, gradient norm, LR, memory and throughput plus final held-out loss into a compact per-run telemetry.json. Raw logs are retained.

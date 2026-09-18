@@ -76,10 +76,32 @@ def isolated(argv, repo, workspace, output=None, evaluator=False):
         command += ["--bind", str(output), "/tmp/output"]
     if evaluator:
         command += [
-            "--setenv", "HF_DATASETS_CACHE", "/tmp/hf-datasets-cache",
-            "--setenv", "HF_HUB_OFFLINE", "1",
-            "--setenv", "TRANSFORMERS_OFFLINE", "1",
+            "--setenv",
+            "HF_DATASETS_CACHE",
+            "/tmp/hf-datasets-cache",
+            "--setenv",
+            "HF_HUB_OFFLINE",
+            "1",
+            "--setenv",
+            "TRANSFORMERS_OFFLINE",
+            "1",
         ]
+        hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache/huggingface"))
+        hub_cache = Path(
+            os.environ.get("HF_HUB_CACHE", os.environ.get("HUGGINGFACE_HUB_CACHE", hf_home / "hub"))
+        )
+        if hub_cache.is_dir():
+            command += [
+                "--ro-bind",
+                str(hub_cache.resolve()),
+                "/tmp/hf-model-cache",
+                "--setenv",
+                "HF_HUB_CACHE",
+                "/tmp/hf-model-cache",
+                "--setenv",
+                "HUGGINGFACE_HUB_CACHE",
+                "/tmp/hf-model-cache",
+            ]
         venv = repo / ".venv"
         raw_executable = Path(argv[0])
         if venv.exists() and str(raw_executable).startswith(str(venv)):

@@ -33,3 +33,4 @@ experiments/**/videos/
 .rsi/
 .rsi-v1*/
 .rsi-archive*/
+.rsi-retention/

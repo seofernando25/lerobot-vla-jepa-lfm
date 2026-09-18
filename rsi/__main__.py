@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--config", type=Path, default=Path("rsi/config.json"))
     parser.add_argument("--synthetic", "--dry-run", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--prior-study", type=Path, help="completed v2/v3 history for fresh init")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     if args.command == "dry-run" or (args.command == "run" and args.synthetic):
@@ -35,7 +36,7 @@ def main():
     else:
         with lock(runner.state):
             if args.command == "init":
-                runner.initialize(args.config)
+                runner.initialize(args.config, args.prior_study)
             else:
 
                 def request_stop(signum, frame):
@@ -43,7 +44,10 @@ def main():
 
                 signal.signal(signal.SIGTERM, request_stop)
                 signal.signal(signal.SIGINT, request_stop)
-                runner.run(args.resume)
+                try:
+                    runner.run(args.resume)
+                except InterruptedError as exc:
+                    print(str(exc))
         print(json.dumps(runner.status(), indent=2))
 
 

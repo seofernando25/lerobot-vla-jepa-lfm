@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from rsi.core import Journal, atomic, candidate_guard, manifest, observation, replay, validate_tree
-from rsi.evaluator import parse_metric, train_args
+from rsi.evaluator import parse_metric, parse_training_telemetry, train_args
 from rsi.policy import Policy, execute, validate_source
 from rsi.process import codex_argv, isolated, run_logged
 from rsi.runner import ROOT, Runner, dry_run, lock, source_contract
@@ -157,6 +157,7 @@ def test_fixed_codex_and_evaluator_contract():
         "--max_eval_samples=64",
         "--batch_size=2",
         "--seed=42",
+        "--log_freq=50",
         "--use_policy_training_preset=false",
         "--scheduler.type=cosine_decay_with_warmup",
     ):
@@ -269,3 +270,17 @@ def test_isolation_command_hides_repo(tmp_path):
     assert "/tmp/work" in command
     assert str(REPO) not in command
     assert "--ro-bind" in command
+
+
+def test_training_telemetry_parser():
+    text = (
+        "step:50 smpl:100 ep:1 epch:0.01 loss:0.500 grdn:2.0 lr:1e-4 "
+        "data_s:0.1 prep_s:0.01 updt_s:0.3 step_s:0.41 smp/s:5 mem_gb:7.5 "
+        "action_loss:0.36 wm_loss:0.14\n"
+        "step 500: eval_loss=0.3000"
+    )
+    telemetry = parse_training_telemetry(text)
+    assert telemetry["training_curve"][0]["step"] == 50
+    assert telemetry["training_curve"][0]["action_loss"] == 0.36
+    assert telemetry["training_curve"][0]["mem_gb"] == 7.5
+    assert telemetry["eval_points"] == [{"step": 500, "eval_loss": 0.3}]

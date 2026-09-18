@@ -1,4 +1,4 @@
-"""V2 synthetic contracts. No archive, Codex, GPU or network required."""
+"""V2 diversity contracts retained under V3 batching. No archive, Codex, GPU or network required."""
 
 import json
 from pathlib import Path
@@ -248,7 +248,7 @@ def test_stop_floor_shared_online_replay_and_bonus():
     assert constrain_action(None, observation(nodes, 8, CONFIG)) == (None, False)
     result = replay(nodes, lambda o, s: None, 0, 8, 0.0025, -1000, 0.001, CONFIG)
     assert result["unique_families"] == 4
-    assert result["constrained_actions"] == 6
+    assert result["constrained_actions"] == 11  # Includes planned missing continuations.
     assert result["objective"] == pytest.approx(-0.94 - 0.0025 * 6 + 0.001 * 4)
     assert all(t["constrained"] for t in result["trace"])
     # Fallback must not peek at a hidden child to evade empty_action.
@@ -261,12 +261,12 @@ def test_online_early_stop_is_constrained(tmp_path, monkeypatch):
     runner.config = dict(runner.config)
     monkeypatch.setattr(runner, "policy", lambda name: lambda obs, seed: None)
     runner.run()
-    assert len(runner.events("action_constrained")) == 12
-    assert runner.status()["accepted_measured_nodes"] == 12
+    assert len(runner.events("action_constrained")) == 24
+    assert runner.status()["accepted_measured_nodes"] == 24
     assert runner.status()["distinct_families"] >= 4
-    assert runner.status()["completed_cycles"] == 2
-    assert runner.status()["finished"] == "policy_STOP"
-    assert runner.status()["replay_trajectories"] == 200
+    assert runner.status()["completed_cycles"] == 3
+    assert runner.status()["finished"] == "global_attempt_cap"
+    assert runner.status()["replay_trajectories"] == 300
 
 
 def test_restart_after_proposal_acceptance_and_v1_state_rejected(tmp_path):
@@ -415,8 +415,8 @@ def test_global_stop_floor_requires_two_cycles_and_twelve_measured(tmp_path, mon
     status = runner.status()
     assert status["completed_cycles"] >= 2
     assert status["accepted_measured_nodes"] >= 12
-    assert status["finished"] == "policy_STOP"
-    assert len(runner.events("stop_deferred")) >= 1
+    assert status["finished"] == "global_attempt_cap"
+    assert not runner.global_stop_allowed(0)
     assert status["replay_trajectories"] >= 200
 
 

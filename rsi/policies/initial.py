@@ -8,7 +8,10 @@ def select(observation, seed):
     nodes = observation["nodes"]
     if observation["round"] >= observation["limit"]:
         return None
-    if observation["root_branches"] < observation["root_open_target"]:
+    if (
+        observation["root_branches"] + observation.get("planned_actions", []).count("root")
+        < observation["root_open_target"]
+    ):
         return "root"
     successful = [n for n in nodes[1:] if n["status"] == "ok"]
     if not successful:

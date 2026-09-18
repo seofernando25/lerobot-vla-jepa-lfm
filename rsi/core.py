@@ -201,37 +201,87 @@ def validate_tree(nodes):
         parents.add(node["parent"])
 
 
+def plan_batch_actions(select, frozen_observation, seed, batch_size, protocol):
+    """Plan against one immutable prefix; expose choices, never sibling outcomes."""
+    actions, substitutions = [], []
+    for slot in range(batch_size):
+        obs = json.loads(json.dumps(frozen_observation))
+        obs.update(batch_slot=slot, batch_size=batch_size, planned_actions=list(actions))
+        requested = select(obs, seed + slot)
+        # Constrain against the trusted prefix, not policy-mutated input.
+        action, constrained = constrain_action(requested, frozen_observation)
+        if action is None:
+            break
+        duplicate = action != "root" and action in actions
+        if duplicate:
+            leaves = [
+                n
+                for n in frozen_observation["nodes"]
+                if n["id"] in frozen_observation["leaves"] and n["id"] not in actions
+            ]
+            best = max(leaves, key=lambda n: (n["score"], n["id"]), default=None)
+            action = best["id"] if best else "root"
+        if constrained or duplicate:
+            substitutions.append(
+                {
+                    "batch_slot": slot,
+                    "requested": requested,
+                    "action": action,
+                    "reason": "duplicate_parent" if duplicate else "coverage",
+                }
+            )
+        actions.append(action)
+    return {
+        "planned_actions": actions,
+        "substitutions": substitutions,
+        "constrained_actions": len(substitutions),
+    }
+
+
 def replay(nodes, select, seed, limit, beta1, failure_score, beta_diversity=0.0, protocol=None):
     validate_tree(nodes)
     revealed = [nodes[0]]
     trace = []
     reason = "K2"
     constrained_actions = 0
-    for turn in range(limit):
+    protocol = protocol or {}
+    while len(revealed) - 1 < limit:
         if len(revealed) == len(nodes):
             reason = "full_tree"
             break
         obs = observation(revealed, limit, protocol)
-        action = select(obs, seed + turn)
-        action, constrained = constrain_action(action, obs)
-        constrained_actions += int(constrained)
-        if action is None:
+        plan = plan_batch_actions(
+            select,
+            obs,
+            seed + len(trace) * max(1, limit),
+            min(protocol.get("proposal_batch_size", 1), limit - len(revealed) + 1),
+            protocol,
+        )
+        constrained_actions += plan["constrained_actions"]
+        seen = {n["id"] for n in revealed}
+        children = []
+        for action in plan["planned_actions"]:
+            child = next(
+                (n for n in nodes[1:] if n["parent"] == action and n["id"] not in seen), None
+            )
+            if child is not None:
+                children.append(child)
+                seen.add(child["id"])
+        trace.append(
+            dict(
+                visible_before=[n["id"] for n in revealed],
+                **plan,
+                constrained=bool(plan["constrained_actions"]),
+                revealed=[n["id"] for n in children],
+            )
+        )
+        if not plan["planned_actions"]:
             reason = "STOP"
             break
-        seen = {n["id"] for n in revealed}
-        child = next((n for n in nodes[1:] if n["parent"] == action and n["id"] not in seen), None)
-        if child is None:
+        if not children:
             reason = "empty_action"
             break
-        trace.append(
-            {
-                "visible_before": [n["id"] for n in revealed],
-                "action": action,
-                "revealed": child["id"],
-                "constrained": constrained,
-            }
-        )
-        revealed.append(child)
+        revealed.extend(children)
     quality = max(
         (n["score"] for n in revealed if n.get("score") is not None), default=failure_score
     )

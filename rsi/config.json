@@ -24,7 +24,7 @@
   "probe_timeout_seconds": 14400,
   "policy_timeout_seconds": 5,
   "lerobot_sha": "30074f7f1358b3c015ae1750017200e86e9c4eb6",
-  "protocol_version": "dream-rsi-v2",
+  "protocol_version": "dream-rsi-v3-batched",
   "beta_diversity": 0.001,
   "max_proposal_retries": 3,
   "root_open_target": 5,
@@ -35,5 +35,9 @@
   "min_refinement_arch_delta": 4,
   "novelty_reference": "rsi/studies/v1_novelty_reference.json",
   "min_outer_iterations_before_stop": 2,
-  "min_total_measured_nodes_before_stop": 12
+  "min_total_measured_nodes_before_stop": 12,
+  "proposal_batch_size": 4,
+  "proposal_parallel_workers": 4,
+  "physical_evaluator_workers": 1,
+  "min_free_disk_gib": 20
 }

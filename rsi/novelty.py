@@ -219,7 +219,10 @@ def check_novelty(proposal, delta, parent, references, config):
 def compact_node(node):
     proposal = node.get("proposal") or {}
     return {
-        **{k: node.get(k) for k in ("id", "outer", "parent", "score", "status")},
+        **{
+            k: node.get(k)
+            for k in ("id", "outer", "parent", "score", "status", "batch_id", "batch_slot")
+        },
         **{
             k: proposal.get(k, node.get(k))
             for k in ("mechanism_family", "architecture_axes", "structural_change")

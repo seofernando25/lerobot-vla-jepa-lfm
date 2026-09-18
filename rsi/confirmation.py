@@ -45,7 +45,9 @@ def plan(runner):
             "train_argv": [
                 sys.executable,
                 str(runner.repo / "rsi/evaluator.py"),
-                *train_args(config, str(output / "train"), template["training_steps"]),
+                *train_args(
+                    config, str(output / "train"), template["training_steps"], save_checkpoint=True
+                ),
             ],
             "eval_argv": [
                 sys.executable,

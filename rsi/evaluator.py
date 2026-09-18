@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 
-def train_args(config, output="/tmp/output/train", steps=None):
+def train_args(config, output="/tmp/output/train", steps=None, save_checkpoint=False):
     steps = config["probe_steps"] if steps is None else steps
     return [
         "--policy.type=vla_jepa_lfm",
@@ -56,6 +56,7 @@ def train_args(config, output="/tmp/output/train", steps=None):
         f"--seed={config['seed']}",
         f"--batch_size={config['batch_size']}",
         f"--num_workers={config['num_workers']}",
+        "--log_freq=50",
         "--cudnn_deterministic=true",
         f"--accelerator.mixed_precision={config['precision']}",
         "--accelerator.gradient_accumulation.steps=1",
@@ -72,11 +73,38 @@ def train_args(config, output="/tmp/output/train", steps=None):
         "--scheduler.decay_lr=0.0000025",
         "--optimizer.grad_clip_norm=10.0",
         "--wandb.enable=false",
-        "--save_checkpoint=true",
+        f"--save_checkpoint={str(save_checkpoint).lower()}",
         "--save_freq=0",
         f"--output_dir={output}",
         "--job_name=rsi_fixed_probe",
     ]
+
+
+_TRAIN_LOG_RE = re.compile(
+    r"step:(?P<step>\d+)\s+smpl:(?P<samples>\d+)\s+ep:(?P<episode>\d+)\s+"
+    r"epch:(?P<epoch>[0-9.]+)\s+loss:(?P<loss>[-+0-9.eE]+)\s+"
+    r"grdn:(?P<grad_norm>[-+0-9.eE]+)\s+lr:(?P<lr>[-+0-9.eE]+)\s+"
+    r"data_s:(?P<data_s>[-+0-9.eE]+)\s+prep_s:(?P<prep_s>[-+0-9.eE]+)\s+"
+    r"updt_s:(?P<update_s>[-+0-9.eE]+)\s+step_s:(?P<step_s>[-+0-9.eE]+)\s+"
+    r"smp/s:(?P<samples_per_s>[-+0-9.eE]+)\s+mem_gb:(?P<mem_gb>[-+0-9.eE]+)\s+"
+    r"action_loss:(?P<action_loss>[-+0-9.eE]+)\s+wm_loss:(?P<wm_loss>[-+0-9.eE]+)"
+)
+_EVAL_LOG_RE = re.compile(r"step\s+(?P<step>\d+):\s+eval_loss=(?P<eval_loss>[-+0-9.eE]+)")
+
+
+def parse_training_telemetry(text):
+    curve = []
+    for match in _TRAIN_LOG_RE.finditer(text):
+        row = {
+            key: (int(value) if key in {"step", "samples", "episode"} else float(value))
+            for key, value in match.groupdict().items()
+        }
+        curve.append(row)
+    eval_points = [
+        {"step": int(match.group("step")), "eval_loss": float(match.group("eval_loss"))}
+        for match in _EVAL_LOG_RE.finditer(text)
+    ]
+    return {"training_curve": curve, "eval_points": eval_points}
 
 
 def parse_metric(text, steps):
