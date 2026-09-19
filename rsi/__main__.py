@@ -18,7 +18,9 @@ def main():
     parser.add_argument("--config", type=Path, default=Path("rsi/config.json"))
     parser.add_argument("--synthetic", "--dry-run", action="store_true")
     parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--prior-study", type=Path, help="completed v2/v3 history for fresh init")
+    parser.add_argument(
+        "--prior-study", type=Path, help="sealed/exhausted prior RSI state for V4 continuation"
+    )
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     if args.command == "dry-run" or (args.command == "run" and args.synthetic):

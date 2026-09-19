@@ -11,6 +11,7 @@ import pytest
 from rsi.core import PLUGIN, observation, plan_batch_actions, replay
 from rsi.evaluator import train_args
 from rsi.policy import execute
+from rsi.process import OperatorStop
 from rsi.runner import ROOT, Runner, assert_no_model_artifacts, load_config
 
 REPO = Path(__file__).resolve().parents[1]
@@ -43,14 +44,18 @@ def test_planner_prefix_root_target_unique_and_mutation():
         return result
 
     plan = plan_batch_actions(select, obs, 42, 4, CONFIG)
-    assert plan["planned_actions"].count("root") == 1
-    assert len(set(plan["planned_actions"])) == 4
+    assert plan["modes"] == ["refinement", "refinement", "novel", "novel"]
+    assert plan["planned_actions"][:2] == ["n1", "n2"]
+    assert plan["planned_actions"][2:] == ["root", "root"]
     assert all(o["nodes"] == obs["nodes"] for o in seen)
     assert [o["planned_actions"] for o in seen] == [plan["planned_actions"][:i] for i in range(4)]
     duplicate = plan_batch_actions(lambda o, s: "n1", obs, 0, 4, CONFIG)
-    assert len(set(duplicate["planned_actions"])) == 4
-    assert duplicate["constrained_actions"] == 3
-    assert plan_batch_actions(lambda o, s: None, obs, 0, 4, CONFIG)["planned_actions"] != []
+    assert duplicate["planned_actions"][0] == "n1"
+    assert duplicate["planned_actions"][1] != "n1"
+    assert duplicate["planned_actions"][2:] == ["root", "root"]
+    assert duplicate["constrained_actions"] >= 3
+    stopped = plan_batch_actions(lambda o, s: None, obs, 0, 4, CONFIG)
+    assert stopped["planned_actions"][2:] == ["root", "root"]
 
 
 def test_parallel_proposals_collision_reset_histories_and_eval_barrier(tmp_path, monkeypatch):
@@ -78,7 +83,7 @@ def test_parallel_proposals_collision_reset_histories_and_eval_barrier(tmp_path,
             finished.append((identifier, retry))
         return p
 
-    def evaluate(workspace, output, logs):
+    def evaluate(workspace, output, logs, **kwargs):
         assert len(finished) == 5
         assert runner.events("batch_proposals_done")
         with lock:
@@ -231,13 +236,17 @@ def test_confirmation_keeps_checkpoint_and_completed_history_import(tmp_path):
         assert "--save_checkpoint=true" in arm["train_argv"]
         assert any("checkpoints/last/pretrained_model" in a for a in arm["eval_argv"])
     imported = Runner(REPO, tmp_path / "imported", synthetic=True)
-    with pytest.raises(ValueError, match="completed"):
-        imported.initialize(REPO / "rsi/config.json", runner.state)
+    import_config = dict(CONFIG, continuation_anchor_ids=["n0001"])
+    import_path = tmp_path / "import-config.json"
+    import_path.write_text(json.dumps(import_config))
+    with pytest.raises(ValueError, match="finished or exhausted"):
+        imported.initialize(import_path, runner.state)
     runner.journal.append("finished", reason="synthetic test")
-    imported.initialize(REPO / "rsi/config.json", runner.state)
+    imported.initialize(import_path, runner.state)
     imported.verify()
     assert imported.ledger() == runner.ledger()
     assert len(imported.root_references()) == len(runner.root_references())
+    assert imported.anchor_metadata("n0001")["status"] == "ok"
     assert not (imported.state / "attempts").exists()
 
 
@@ -283,7 +292,7 @@ def test_proposal_interruption_never_retried(tmp_path, monkeypatch):
 
     def interrupted(*args):
         calls.append(args)
-        raise InterruptedError("session timed out")
+        raise OperatorStop("operator stopped session")
 
     monkeypatch.setattr(runner, "discover", interrupted)
     runner.attempt(0, "root")

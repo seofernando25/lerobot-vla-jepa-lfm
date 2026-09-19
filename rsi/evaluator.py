@@ -9,8 +9,9 @@ import sys
 from pathlib import Path
 
 
-def train_args(config, output="/tmp/output/train", steps=None, save_checkpoint=False):
+def train_args(config, output="/tmp/output/train", steps=None, save_checkpoint=False, seed=None):
     steps = config["probe_steps"] if steps is None else steps
+    seed = config["seed"] if seed is None else seed
     return [
         "--policy.type=vla_jepa_lfm",
         "--policy.init_from_vla_jepa=lerobot/VLA-JEPA-Pretrain",
@@ -53,7 +54,7 @@ def train_args(config, output="/tmp/output/train", steps=None, save_checkpoint=F
         f"--eval_steps={steps}",
         "--env_eval_freq=0",
         f"--max_eval_samples={config['max_eval_samples']}",
-        f"--seed={config['seed']}",
+        f"--seed={seed}",
         f"--batch_size={config['batch_size']}",
         f"--num_workers={config['num_workers']}",
         "--log_freq=50",
