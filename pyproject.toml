@@ -13,6 +13,7 @@ dependencies = [
   "lerobot[vla_jepa,training] @ git+https://github.com/huggingface/lerobot.git@30074f7f1358b3c015ae1750017200e86e9c4eb6",
   "huggingface-hub>=0.34",
   "safetensors>=0.5",
+  "gguf>=0.10.0",
 ]
 
 [project.optional-dependencies]

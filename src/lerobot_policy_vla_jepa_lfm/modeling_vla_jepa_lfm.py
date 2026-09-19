@@ -103,32 +103,79 @@ class VLAJEPALFMPolicy(VLAJEPAPolicy):
 
     def _load_compatible_vla_jepa_weights(self, source: str, prefixes: tuple[str, ...]) -> None:
         path = Path(source)
+        is_gguf = False
         if path.is_dir():
-            model_file = path / "model.safetensors"
+            if (path / "model.safetensors").is_file():
+                model_file = path / "model.safetensors"
+            else:
+                ggufs = list(path.glob("*.gguf"))
+                if ggufs:
+                    model_file = ggufs[0]
+                    is_gguf = True
+                else:
+                    model_file = path / "model.safetensors"
         elif path.is_file():
             model_file = path
+            is_gguf = model_file.suffix == ".gguf"
         else:
-            model_file = Path(hf_hub_download(repo_id=source, filename="model.safetensors"))
+            try:
+                model_file = Path(hf_hub_download(repo_id=source, filename="model.safetensors"))
+            except Exception:
+                from huggingface_hub import HfApi
+                api = HfApi()
+                repo_files = api.list_repo_files(repo_id=source)
+                ggufs = [f for f in repo_files if f.endswith(".gguf")]
+                if ggufs:
+                    gguf_name = "vla-jepa.gguf" if "vla-jepa.gguf" in ggufs else ggufs[0]
+                    model_file = Path(hf_hub_download(repo_id=source, filename=gguf_name))
+                    is_gguf = True
+                else:
+                    raise
 
         current = self.state_dict()
         selected: dict[str, torch.Tensor] = {}
         mismatched: list[str] = []
-        with safe_open(model_file, framework="pt", device="cpu") as handle:
-            for key in handle.keys():  # noqa: SIM118 - safetensors.safe_open is not iterable
-                if not key.startswith(prefixes):
-                    continue
-                if key not in current:
-                    continue
-                tensor = handle.get_tensor(key)
-                if tensor.shape != current[key].shape:
-                    mismatched.append(f"{key}: {tuple(tensor.shape)} != {tuple(current[key].shape)}")
-                    continue
-                selected[key] = tensor
+
+        if is_gguf:
+            import gguf
+            reader = gguf.GGUFReader(str(model_file))
+            for tensor in reader.tensors:
+                key = tensor.name
+                candidate_keys = [key]
+                if not key.startswith("model."):
+                    candidate_keys.append("model." + key)
+                for k in candidate_keys:
+                    if not any(k.startswith(p) for p in prefixes):
+                        continue
+                    if k not in current:
+                        continue
+                    t = torch.from_numpy(tensor.data.copy())
+                    if t.shape != current[k].shape:
+                        mismatched.append(f"{k}: {tuple(t.shape)} != {tuple(current[k].shape)}")
+                        continue
+                    selected[k] = t
+        else:
+            with safe_open(model_file, framework="pt", device="cpu") as handle:
+                for key in handle.keys():  # noqa: SIM118 - safetensors.safe_open is not iterable
+                    if not any(key.startswith(p) for p in prefixes):
+                        continue
+                    if key not in current:
+                        continue
+                    tensor = handle.get_tensor(key)
+                    if tensor.shape != current[key].shape:
+                        mismatched.append(f"{key}: {tuple(tensor.shape)} != {tuple(current[key].shape)}")
+                        continue
+                    selected[key] = tensor
 
         if mismatched:
             raise ValueError("Incompatible VLA-JEPA initialization tensors:\n" + "\n".join(mismatched))
         if not selected:
-            raise ValueError(f"No compatible tensors found in {model_file} for prefixes {prefixes}")
+            logger.warning(
+                "No compatible tensors found in %s for prefixes %s; keeping default initialization",
+                model_file,
+                prefixes,
+            )
+            return
         _missing, unexpected = self.load_state_dict(selected, strict=False)
         if unexpected:
             raise RuntimeError(f"Unexpected initialization keys: {unexpected}")

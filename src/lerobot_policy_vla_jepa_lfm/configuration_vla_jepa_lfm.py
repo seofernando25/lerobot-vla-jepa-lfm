@@ -24,8 +24,8 @@ class VLAJEPALFMConfig(VLAJEPAConfig):
     train_multimodal_projector: bool = False
     freeze_vision_tower: bool = True
 
-    # Transfer only architecture-compatible VLA-JEPA modules from the official LeRobot checkpoint.
-    init_from_vla_jepa: str | None = "lerobot/VLA-JEPA-Pretrain"
+    # Transfer only architecture-compatible VLA-JEPA modules from official checkpoints or quantized variants (e.g. vrfai/vla-jepa-libero).
+    init_from_vla_jepa: str | None = "vrfai/vla-jepa-libero"
     init_prefixes: tuple[str, ...] = ("model.action_model.", "model.video_predictor.")
 
     def __post_init__(self) -> None:
