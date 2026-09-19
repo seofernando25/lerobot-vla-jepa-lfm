@@ -93,3 +93,10 @@ python -m rsi dry-run
 Candidates may modify only Python source under `src/lerobot_policy_vla_jepa_lfm/**`. Registration/processor files, LeRobot, dataset/split, preprocessing/normalization, scoring, Qwen baseline, VLA-JEPA action/world-model architecture and published initialization, inherited losses, and prediction semantics remain protected.
 
 The search metric is negative held-out eval loss and is a discovery proxy, not a LIBERO success claim. Final claims still require matched confirmation training and closed-loop LIBERO evaluation.
+
+## Tracked experiment registry
+
+Published experiment outcomes are indexed in rsi/studies/experiment_registry.jsonl.
+It is the compact durable ledger for candidate attempts; raw .rsi state remains local
+and ignored. Update the registry whenever new real outcomes are published so Git history
+retains the scientific experiment record without committing raw runtime artifacts.

@@ -60,6 +60,16 @@ PYTHONPATH=src:. uv run python -m rsi stop
 
 Defaults: one RTX 3090 evaluator worker; B=4 logical proposals; 2 refinement + 2 novel slots; one matched 500-step root screen; 500 steps/candidate screen; up to six matched 1500-step promotions; 8 research probes per online tree; up to 3 online/dream cycles; hard cap 24 research probes; 32 total reservations; deterministic 10% held-out split; 64 held-out evaluation samples.
 
+## Experiment record
+
+A compact tracked ledger of every preserved V1-V4 candidate attempt lives in
+[rsi/studies/experiment_registry.jsonl](rsi/studies/experiment_registry.jsonl), with
+schema/provenance notes in
+[rsi/studies/experiment_registry.md](rsi/studies/experiment_registry.md).
+
+The registry keeps mechanism, lineage, measured screen score, matched promotion evidence,
+and failure classification while raw .rsi journals/logs/checkpoints remain ignored.
+
 ## Confirmation
 
 After search, `python -m rsi confirm-plan` emits the matched confirmation plan. Final claims require fresh matched-budget training and closed-loop LIBERO evaluation.

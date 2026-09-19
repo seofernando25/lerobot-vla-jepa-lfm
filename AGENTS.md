@@ -40,6 +40,7 @@ They may **not** alter dataset/split, evaluator, scoring, preprocessing/normaliz
 - Promotion is a separate matched 1500-step evidence channel, bounded to six candidates.
 - Each completed offline cycle must contain exactly 100 replay trajectories.
 - Final comparison requires fresh matched-budget training and closed-loop LIBERO evaluation.
+- Before publishing/merging new real RSI outcomes, update rsi/studies/experiment_registry.jsonl and its provenance doc; never substitute failure sentinels for measured scores.
 
 ## V4 batching, anchors, and recovery
 
