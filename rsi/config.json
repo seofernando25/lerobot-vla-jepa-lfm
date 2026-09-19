@@ -1,9 +1,14 @@
 {
   "probe_steps": 500,
+  "promotion_steps": 1500,
+  "promotion_margin": 0.005,
+  "max_promotions": 6,
   "K1": 8,
   "K2": 8,
   "max_outer_iterations": 3,
   "max_real_attempts": 24,
+  "max_total_reservations": 32,
+  "max_runtime_failures": 4,
   "W": 1,
   "beta1": 0.0025,
   "failure_score": -1000000.0,
@@ -11,7 +16,7 @@
     "repo_id": "IPEC-COMMUNITY/libero_spatial_no_noops_1.0.0_lerobot",
     "sandbox_root": "/tmp/dataset",
     "eval_split": 0.1,
-    "version": "v3.0"
+    "version": "v4.0"
   },
   "max_eval_samples": 64,
   "seed": 42,
@@ -22,9 +27,10 @@
   "replay_trajectories": 100,
   "agent_timeout_seconds": 1800,
   "probe_timeout_seconds": 14400,
+  "promotion_timeout_seconds": 21600,
   "policy_timeout_seconds": 5,
   "lerobot_sha": "30074f7f1358b3c015ae1750017200e86e9c4eb6",
-  "protocol_version": "dream-rsi-v3-batched",
+  "protocol_version": "dream-rsi-v4-continuation",
   "beta_diversity": 0.001,
   "max_proposal_retries": 3,
   "root_open_target": 5,
@@ -39,5 +45,8 @@
   "proposal_batch_size": 4,
   "proposal_parallel_workers": 4,
   "physical_evaluator_workers": 1,
+  "refinement_slots_per_batch": 2,
+  "novel_slots_per_batch": 2,
+  "continuation_anchor_ids": ["n0018", "n0014", "n0017"],
   "min_free_disk_gib": 20
 }

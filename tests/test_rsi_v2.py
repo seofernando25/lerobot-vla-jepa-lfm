@@ -5,7 +5,15 @@ from pathlib import Path
 
 import pytest
 
-from rsi.core import PLUGIN, candidate_guard, constrain_action, manifest, observation, replay
+from rsi.core import (
+    PLUGIN,
+    candidate_guard,
+    constrain_action,
+    manifest,
+    observation,
+    plan_batch_actions,
+    replay,
+)
 from rsi.novelty import (
     AXES,
     architecture_delta,
@@ -261,8 +269,13 @@ def test_online_early_stop_is_constrained(tmp_path, monkeypatch):
     runner.config = dict(runner.config)
     monkeypatch.setattr(runner, "policy", lambda name: lambda obs, seed: None)
     runner.run()
-    assert len(runner.events("action_constrained")) == 24
+    # V4 records both mixed-mode coercions and explicit frozen-anchor substitutions.
+    assert len(runner.events("action_constrained")) >= 24
+    assert any(
+        e.get("reason") == "continuation_anchor" for e in runner.events("action_constrained")
+    )
     assert runner.status()["accepted_measured_nodes"] == 24
+    assert runner.status()["research_attempts"] == 24
     assert runner.status()["distinct_families"] >= 4
     assert runner.status()["completed_cycles"] == 3
     assert runner.status()["finished"] == "global_attempt_cap"
@@ -324,7 +337,7 @@ def test_real_discovery_command_mocked_rejection_precedes_gpu(tmp_path, monkeypa
         else:
             assert "candidate changed forbidden file: proposal_schema.json" in prompt
 
-    def fake_evaluate(work, output, logs):
+    def fake_evaluate(work, output, logs, **kwargs):
         probes.append(work)
         assert len(runner.events("proposal_rejected")) == 1
         assert len(runner.events("proposal_accepted")) == 1
@@ -355,23 +368,24 @@ def test_prior_outer_root_duplicate_and_refinement_label(tmp_path, monkeypatch):
         check_novelty(proposal(parent="n1"), {"a", "b", "c", "d"}, "root", [], CONFIG)
 
 
-def test_default_policy_opens_five_roots_then_refines():
+def test_default_policy_refines_good_leaves_and_planner_enforces_novel_slots():
     from rsi.policy import execute
 
     source = (REPO / "rsi/policies/initial.py").read_text()
-    nodes = [ROOT]
-    for i in range(5):
-        assert execute(source, observation(nodes, 8, CONFIG), 42) == "root"
-        nodes.append(
-            {
-                "id": f"n{i}",
-                "parent": "root",
-                "score": -1 + i / 100,
-                "status": "ok",
-                "family_id": str(i),
-            }
-        )
-    assert execute(source, observation(nodes, 8, CONFIG), 42) in {n["id"] for n in nodes[1:]}
+    assert execute(source, observation([ROOT], 8, CONFIG), 42) == "root"
+    nodes = [
+        ROOT,
+        {"id": "n1", "parent": "root", "score": -0.31, "status": "ok", "family_id": "a"},
+        {"id": "n2", "parent": "root", "score": -0.305, "status": "ok", "family_id": "b"},
+        {"id": "n3", "parent": "root", "score": -0.40, "status": "ok", "family_id": "c"},
+    ]
+    selected = execute(source, observation(nodes, 8, CONFIG), 42)
+    assert selected in {"n1", "n2"}
+    plan = plan_batch_actions(
+        lambda o, seed: selected, observation(nodes, 8, CONFIG), 42, 4, CONFIG
+    )
+    assert plan["modes"] == ["refinement", "refinement", "novel", "novel"]
+    assert plan["planned_actions"][2:] == ["root", "root"]
 
 
 def test_failed_nodes_do_not_satisfy_coverage_or_diversity():

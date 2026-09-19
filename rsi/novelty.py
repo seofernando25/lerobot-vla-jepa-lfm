@@ -221,7 +221,16 @@ def compact_node(node):
     return {
         **{
             k: node.get(k)
-            for k in ("id", "outer", "parent", "score", "status", "batch_id", "batch_slot")
+            for k in (
+                "id",
+                "outer",
+                "parent",
+                "source_anchor",
+                "score",
+                "status",
+                "batch_id",
+                "batch_slot",
+            )
         },
         **{
             k: proposal.get(k, node.get(k))
@@ -229,6 +238,7 @@ def compact_node(node):
         },
         "family_id": node.get("family_id"),
         "eligible": node.get("eligible", node.get("status") == "ok"),
+        "promotion": node.get("promotion"),
         "failure_reason": (
             str(node.get("summary", ""))[:800] if node.get("status") != "ok" else None
         ),

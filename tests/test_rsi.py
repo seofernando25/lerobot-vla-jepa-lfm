@@ -188,7 +188,7 @@ def make_runner(tmp_path, **overrides):
     return runner
 
 
-def test_restart_pending_consumes_budget_once(tmp_path):
+def test_restart_pending_is_closed_and_replaced_without_spending_research_budget(tmp_path):
     runner = make_runner(tmp_path, max_real_attempts=1)
     runner.verify()
     runner.journal.append("attempt", attempt="n0001", outer=0, parent="root", started_at="fake")
@@ -196,8 +196,11 @@ def test_restart_pending_consumes_budget_once(tmp_path):
     with pytest.raises(ValueError, match="resume"):
         runner.run()
     runner.run(resume=True)
-    assert len(runner.events("attempt")) == 1
-    assert runner.events("outcome")[0]["node"]["status"] == "interrupted"
+    assert len(runner.events("attempt")) == 2
+    outcomes = runner.events("outcome")
+    assert outcomes[0]["node"]["status"] == "interrupted"
+    assert outcomes[1]["node"]["status"] == "ok"
+    assert runner.status()["research_attempts"] == 1
     assert runner.status()["replay_trajectories"] == 100
     assert runner.status()["finished"] == "global_attempt_cap"
 

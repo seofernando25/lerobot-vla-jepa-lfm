@@ -12,6 +12,14 @@ from pathlib import Path
 from rsi.core import atomic
 
 
+class OperatorStop(InterruptedError):
+    """Operator-requested stop; safe to resume later."""
+
+
+class ProcessTimeout(TimeoutError):
+    """External process exceeded its fixed wall-clock budget."""
+
+
 def codex_argv():
     return [
         "codex",
@@ -141,8 +149,10 @@ def run_logged(argv, cwd, logs, timeout, stop_file, prompt=None):
                 process.stdin.write(prompt)
             process.stdin.close()
             while process.poll() is None:
-                if stop_file.exists() or time.monotonic() - start > timeout:
-                    raise InterruptedError("stop requested or subprocess timeout")
+                if stop_file.exists():
+                    raise OperatorStop("stop requested")
+                if time.monotonic() - start > timeout:
+                    raise ProcessTimeout("subprocess timeout")
                 time.sleep(0.2)
             if process.returncode:
                 raise RuntimeError(f"subprocess exit {process.returncode}; see {logs}")

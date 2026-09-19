@@ -202,37 +202,67 @@ def validate_tree(nodes):
 
 
 def plan_batch_actions(select, frozen_observation, seed, batch_size, protocol):
-    """Plan against one immutable prefix; expose choices, never sibling outcomes."""
-    actions, substitutions = [], []
+    """Plan against one immutable prefix with V4 mixed exploration when configured."""
+    actions, substitutions, modes = [], [], []
+    refinement_slots = protocol.get("refinement_slots_per_batch")
+    novel_slots = protocol.get("novel_slots_per_batch")
+    mixed = refinement_slots is not None and novel_slots is not None
+    if mixed and refinement_slots + novel_slots != protocol.get("proposal_batch_size", batch_size):
+        raise ValueError("mixed batch slots must equal proposal_batch_size")
+
     for slot in range(batch_size):
         obs = json.loads(json.dumps(frozen_observation))
         obs.update(batch_slot=slot, batch_size=batch_size, planned_actions=list(actions))
         requested = select(obs, seed + slot)
-        # Constrain against the trusted prefix, not policy-mutated input.
-        action, constrained = constrain_action(requested, frozen_observation)
+        mode = (
+            "refinement"
+            if mixed and slot < min(refinement_slots, batch_size)
+            else "novel"
+            if mixed
+            else "policy"
+        )
+
+        if mode == "novel":
+            action = "root"
+            constrained = requested != "root"
+        else:
+            action, constrained = constrain_action(requested, frozen_observation)
+            duplicate = action != "root" and action in actions
+            if mode == "refinement" and (action in {None, "root"} or duplicate):
+                leaves = [
+                    n
+                    for n in frozen_observation["nodes"]
+                    if n["id"] in frozen_observation["leaves"] and n["id"] not in actions
+                ]
+                best = max(leaves, key=lambda n: (n["score"], n["id"]), default=None)
+                action = best["id"] if best else "root"
+                constrained = True if requested != action else constrained
+            elif duplicate:
+                leaves = [
+                    n
+                    for n in frozen_observation["nodes"]
+                    if n["id"] in frozen_observation["leaves"] and n["id"] not in actions
+                ]
+                best = max(leaves, key=lambda n: (n["score"], n["id"]), default=None)
+                action = best["id"] if best else "root"
+                constrained = True
+
         if action is None:
             break
-        duplicate = action != "root" and action in actions
-        if duplicate:
-            leaves = [
-                n
-                for n in frozen_observation["nodes"]
-                if n["id"] in frozen_observation["leaves"] and n["id"] not in actions
-            ]
-            best = max(leaves, key=lambda n: (n["score"], n["id"]), default=None)
-            action = best["id"] if best else "root"
-        if constrained or duplicate:
+        if constrained:
             substitutions.append(
                 {
                     "batch_slot": slot,
                     "requested": requested,
                     "action": action,
-                    "reason": "duplicate_parent" if duplicate else "coverage",
+                    "reason": "mixed_batch_" + mode if mixed else "coverage",
                 }
             )
         actions.append(action)
+        modes.append(mode)
     return {
         "planned_actions": actions,
+        "modes": modes,
         "substitutions": substitutions,
         "constrained_actions": len(substitutions),
     }
