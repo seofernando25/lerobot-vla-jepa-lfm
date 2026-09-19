@@ -91,3 +91,12 @@ its own global v3 history. Do not initialize from or modify live v2 state. Harne
 construction and `dry-run` require no real study, Codex discovery or GPU training.
 
 Search probes log every 50 optimizer steps; the harness parses loss, action/world-model loss, gradient norm, LR, memory and throughput plus final held-out loss into a compact per-run telemetry.json. Raw logs are retained.
+
+## Interrupted-study recovery
+
+- A reboot or terminated runner may leave a valid `.rsi/` journal with `stop_requested=true` and no final `finished` event. **Never re-run `init`, delete `.rsi/`, or hand-edit events to recover.**
+- First inspect `python -m rsi status` and check that no RSI runner, evaluator, or Codex discovery process is active.
+- Resume only with `python -m rsi run --resume`. The v3 harness removes the stale STOP marker, closes genuinely interrupted reservations/batches without relaunching external work, then continues/finalizes from the journal.
+- If all reserved attempts already have outcomes, resume must not create new candidates; it only completes the remaining controller/finalization path allowed by the frozen config.
+- Treat the initialized `rsi/` harness/config manifest as frozen across reboots. If verification fails, do not edit around it; inspect provenance/commit state first.
+
